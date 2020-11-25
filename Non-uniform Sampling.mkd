@@ -1,0 +1,448 @@
+
+# Non-uniform Sampling in Experience Replay [^1]
+
+[^1]: imo this is a better fit for the name "Batch RL" then pure offline learning
+
+## Research Questions
+1) Evaluate the **individual effectiveness** of the three desirable properties, uncertainty, density, and diversity, in their favorable environments respectively, applying non-uniform sampling strategies (e.g. a most recent paper [8] suggests that PER doesn't show variance reduction empirically)
+
+2) Does the generalized adaptive sampling/curriculum learning view hold in batch RL (in particular, can we find either a) some **patterns** in the level of hardness/density/diversity required between an easy and hard task b) a reasonable annealing **schedule** of the three properties in a single task c) an adaptive method based on some kind of heuristics that works well in the transfer or after a sudden change of environment)
+
+3) It is often emphasized in the literature that PER significantly increases performance in **Atari** (e.g. ~40%) but doesn't show much improvement in the gridworld experiments we've run. I'd like to understand the reason. (e.g. hyperparam-tuning, properties of environments) Is it because there're less informative experiences in Atari or it's just a harder environment. I'd like to run some benchmark on that once I understand 1) and 2).
+
+## Key Insights
+
+- Prioritised Experience Replay (PER) is a form of uncertainty and error sampling
+
+- On-policy sampling methods such as Attentive Experience Replay (AER) and Combined Experience Replay (CER) could be considered as a density sampling technique
+
+- Sampling techniques should adapt to the different stages of learning and subject to the changes in the environment
+
+  
+
+(briefly discuss pro and cons of online RL and offline RL) Therefore, Experience Replay becomes essential in training a sample efficient online agent. According to an ablation study over the different extensions to deep Q-learning{Rainbow DQN paper}, they have found PER to possess the biggest improvement for overall performance.
+
+  
+
+(Relation to continual learning and active learning)
+
+  
+
+Active learning is a semi-supervised learning framework that can achieve better accuracy with fewer labeled data. At its core, it tries to select the most informative data to train on iteratively. It's a simpler problem setting with usually a stationary underlying data distribution compared to what an RL agent is facing.
+
+  
+
+(Justification from an RL theory perspective; GVF and auxiliary tasks) Active sampling could
+
+eventually lead to automatic feature discovery.
+
+  
+
+Last, better sampling algorithms can help us better understand and plan for exploration.
+
+  
+
+In this work, we would like to define the goal of sampling from a buffer as helping the agent learn fast in order to achieve better online performance.
+
+  
+
+We are currently living in the era of big data, so it's safe to assume the amount of available sensory data will continue to grow above the learning capacity of an agent. (This hopefully should be confirmed by some neuroscience study/animal experiment) Under this assumption, developing a smart sampling algorithm is the inevitable future.
+
+  
+
+Normally the community only considers sample efficiency by the number of the online examples an agent encounters and assumes infinite learning power given in between timesteps. However, we would like to argue that the number of experiences sampled from the buffer used in training also affects sample efficiency since, in most realistic settings, an agent has limited computation in between encountering online examples. To this end, we would also like to reduce the number of samples used in training between online encounters and increase sample efficiency.
+
+## Problem Formulation
+
+- Sample selection as constraint reduction[4] (Gradient-based)
+- Sampling as a subset selection[5] (Supervised learning)
+	- also provides some definitions for uncertainty metrics and etc. in classification
+- Defines the incremental learning process under the empirical risk minimization framework (e.g. target hypothesis), where sample weights are considered as a Bayesian prior.  [6] (Curriculum learning)
+- Weighted Sampling
+- Reinforcement Learning Framework [7] (feels like a lazy reference to RLbook in their paper)
+- Others
+	- Probabilities [12]
+	- CDF [13]
+	- Weighted uniform sampling (Moskowitz & Caflisch, 1996) [Importance Sampling](https://www.sciencedirect.com/science/article/pii/S0893608015001768#br000195)
+	- Naive Bayes [14]
+	- Importance sampling & Variance reduction[2]
+
+
+
+## Overview
+[5][DCNNs on a Diet: Sampling Strategies for Reducing the Training Set Size](https://arxiv.org/abs/1606.04232)
+
+>This paper aims to find the subset of training data that achieves similar performance. It's quite different from picking batched samples from an experience replay buffer; however, it introduces desirable qualities for a subset of training data, e.g. batch of data.
+
+This paper discusses several good criteria for selecting new training examples:
+
+- The samples are chosen so that the model is more ***uncertain*** of (or certain but ***wrong*** in its prediction)
+
+- samples need to be a balanced selection from all classes
+
+- samples need to be sufficiently ***diverse***
+
+- samples need to be ***representative*** of the underlying generating process
+
+In particular, it calls for considering the following qualities when constructing a new batch of training data in a classification task,
+
+- Uncertainty and error
+
+	- In classification tasks, class probabilities can be easily produced by the network; however, in a regression task such as Q-learning, we have to approximate the uncertainty measures, such as using the loss instead.
+
+- Class balance
+
+	- In classification tasks, class balance in both the training set and its subset (e.g. a batch) is also a desirable property. It is related to contrastive learning. However, in reinforcement learning, it would be equivalent to balance the state action pairs in a buffer according to their expected sum of rewards.
+
+- Subset diversity
+
+	- We would like to select a diverse subset, which does not have too much redundancy. We seek to ***maximize the average distance between all selected sample pairs*** in the subset.
+
+- Subset representativeness
+
+	- We would also like to select a representative subset B, i.e., the non-selected samples must be well represented by the set B, by ***minimizing the average distance between selected and non-selected samples***.
+
+  
+
+[12][Adaptive Task Sampling for Meta-Learning ](https://arxiv.org/pdf/2007.08735v1.pdf)
+
+  
+
+> Quote: "Instance-based sampling is ubiquitous in stochastic optimization. Generally, it constantly reevaluates the relative importance of each instance during training. The most common paradigm is to calculate the importance of each instance based on the **gradient norm** [1], bound on the gradient norm [2], **loss** [34], approximate loss [3] or prediction probability [8]. One typical line of research work is to leverage adaptive sampling for fast convergence [61,2]. Researchers also consider improving the generalization performance rather than speeding up training [33]. Specifically, [5] considers instances that increase difficulty. Hard example mining methods also prioritize challenging training examples [48,30]. Some other researchers prioritize uncertain examples that are close to the model’s decision boundary [8,50]. In this work, we also evaluate easy sampling and uncertain sampling at the task level, but experimental results show that hard sampling performs better. There also exists work for sampling mini-batches instead of a single instance [12,20]. [58] consider sampling diverse mini-batches via the repulsive point process. Nonetheless, these methods are not designed for meta-learning and few-shot learning."
+
+  
+
+[Active Learning Literature Survey](http://burrsettles.com/pub/settles.activelearning.pdf)
+
+  
+
+From an active learning perspective, typical non-uniform sampling methods can be broken down into different families, Uncertainty Sampling, Query-By-Committee, Expected Model Change, Expected Error Reduction, Variance Reduction, and Density-Weighted Methods.
+
+  
+  
+
+## Uncertainty and Errors
+
+Uncertainty sampling is the most commonly used and well-studied family of active learning techniques. The general idea is that given a model $M_0$ and an initial sample $s_0$, the algorithm would iteratively select the data points that the model is least certain with to add to the sample. Most uncertainty sampling techniques in deep learning are used in classification tasks since the predictions of a NN can be seen as a confidence metric.
+
+[A Hybrid Active Learning and Progressive Sampling Algorithm](http://www.ijmlc.org/vol8/723-L0146.pdf)
+
+> The paper proposes using a standard uncertainly sampling technique in classification by using the **probability score** output by the model to progressively grow the training set.
+
+  
+
+***[Active Learning with Sampling by Uncertainty and Density for Word Sense Disambiguation and Text Classification](https://www.aclweb.org/anthology/C08-1143.pdf)
+
+>The papers discuss ideas from the active learning perspective. The authors defined the sampling problem (similar to our setting) as finding the most informative uncertain samples. Under this objective, they proposed to combine a density measure (to evaluate informativeness) and an entropy measure (to evaluate uncertainty) by simply taking the product.
+
+  
+
+>It employs an **entropy** metric to evaluate uncertainty and select samples along the decision boundary.
+
+  
+
+[14][Evidence-Based Uncertainty Sampling for Active Learning](http://mypages.iit.edu/~msharm11/publications/sharma_dmkd2017.pdf)
+
+> A model can be uncertain about an instance because it has strong, but conflicting evidence for both classes or it can be uncertain because it does not have enough evidence for either class. Our empirical evaluations on several real-world datasets show that **distinguishing between these two types of uncertainties** has a drastic impact on the learning efficiency
+
+> This paper is interesting in the way that it further breaks down the uncertain samples into two categories, ones with conflicting evidence and insufficient evidence. It argues that picking the former is beneficial due to its richness in the information. It uses naive Bayes to separate the two groups of uncertain samples, which unfortunately makes it infeasible to test in Q-learning, but remains an interesting future direction.
+
+  
+  
+
+### Loss based Methods (PER related)
+
+[7][Online Batch Selection for Faster Training of Neural Networks](https://arxiv.org/abs/1511.06343)
+
+Around the same time PER is introduced, this paper proposes a ranked based weighting mechanism w.r.t. their latest known loss value and the probability to be selected decays exponentially as a function of their ranks in order to control the sample size through a tunable parameter $s_e$.
+
+  
+  
+  
+
+## Density/Informativeness
+
+  
+
+[Curious Machines: Active Learning With Structured Instances](http://burrsettles.com/pub/settles.thesis.pdf)
+
+***[Active Learning with Sampling by Uncertainty and Density for Word Sense Disambiguation and Text Classification](https://www.aclweb.org/anthology/C08-1143.pdf)
+
+> These two papers first introduced the idea of combining density with uncertainty measures in actively selecting training samples.
+
+  
+
+>As for the density measure, cosine similarity is used, and the authors gave an example,
+
+>![](https://lh5.googleusercontent.com/iO8e7fVBQbB57KpkmcNN5oqRCbhUPzWMXrrgV5nqcsxCC6EDCXbVR6TMujocyIyBwP4YFDXZS9yzAnRLn1Pa3hXcuLHS10rY4c82Qv9cRGxujwt0B5txB9azph7yufAknWmAFddt)
+
+  
+
+>Here it compares two desired samples along the decision boundary (similar level of uncertainty). The authors argue that point B is more informative than the outlier point A, which possesses less density in its neighborhood. This is in very interesting contrast to the RL perspective in informativeness despite density measures also being applied, where so far we believe that on-policy samples are more informative than others.
+
+### Recency/On-policy
+
+> One example of its application in RL is [Attentive Experience Replay](local/404online), where it uses cosine similarity as the density metric to pick experiences similar to the on-policy ones during a resampling step. Another similar example is [CER](https://arxiv.org/abs/1712.01275), which can be considered as a special case of on-policy distribution density-based sampling techniques. It appends the last-k experiences to the training batch during every step.
+
+  
+
+## Diversity/Coverage/Support
+
+[58][Determinantal Point Processes for Mini-Batch Diversification]([https://arxiv.org/pdf/1705.00607.pdf](https://arxiv.org/pdf/1705.00607.pdf))
+
+> This paper proposes to increase the diversity of the data sample by maximizing the space covered by the feature vectors. It's performed under the framework of Determinantal Point Process (DPP), which arise in random matric theory and quantum physics as a model of random variables with negative correlations. The space covered by two feature vectors is measured by the dot product and the total space is approximated by the gram matrix of the feature vectors. 
+One of the variants of DPP allows to be conditioned on a mini-batch size k (k-DPP). It assigns probabilities to subsets of size k,
+> $P^k_L(Y ) = \dfrac{det(L_Y )} {\Sigma_{|Y^{'}|=k} det(L_Y^{'})}$
+
+[13][Smart sampling and incremental function learning for very large high dimensional data](https://www.sciencedirect.com/science/article/pii/S0893608015001768)
+> Low discrepency  as a measure of uniformity in the input space
+
+ 
+## Connection between Non-uniform Sampling and  Curriculum Learning
+[Curriculum Learning](https://mila.quebec/wp-content/uploads/2019/08/2009_curriculum_icml.pdf)
+Curriculum Learning for training ANNs was introduced in (Bengio 2009) and inspired by "shaping" in animal training. The idea is to start the training with "easy" examples and gradually increase the number of difficult samples in the training set. It also argues that less noisy examples may provide a more smooth optimization objective so that curriculum learning would help find better local minima of a highly non-convex criterion and yield better generalization faster.
+
+The formal definition of curriculum is a sequence of distributions $Q_\lambda$ if the entropy of these distributions increases,
+
+$H(Q_\lambda) < H(Q_{\lambda+\epsilon})\; \forall z$.
+
+In the paper, its connection to active learning was clearly mentioned. Compared to active learning, which biases heavily towards examples near the decision boundary for faster learning, curriculum learning thinks of the process as to preferentially adding samples to the training set near the decision boundary in order to speed up the learner.
+
+Interestingly, curriculum learning reminds me of a learning rate scheduling strategy that is widely used in supervised learning. It dials up and down the learning rate over different epochs to accelerate learning and it seems to work really well empirically on vision datasets such as Imagenet and cifar10. Indeed It sounds rather strange that it even works. Perhaps the learning problem could evolve over epochs and become either easier or harder depending on the loss surface supported by the sampled data. Under this assumption, curriculum learning could help the learning performance by gradually adding the hard samples and save the effort in adapting learning rates.
+
+Following up on this idea, I found that our sparse reward setting is different from classification tasks where curriculum learning has been applied especially at the beginning of training. The sparse reward setting has much less informative samples in the beginning (target $\approx$ 0). This seems to cause a bigger PER emphasis to be beneficial in the starting stage of training v.s. in curriculum learning, easy examples are preferred over hard ones in the beginning.
+
+[Self-Paced Learning for Latent Variable Models](http://ai.stanford.edu/~bpacker/selfPacedLVM.pdf)
+[Curriculum Learning by Transfer Learning: Theory and Experiments with Deep Networks](https://arxiv.org/pdf/1802.03796.pdf)
+[6][On The Power of Curriculum Learning in Training Deep Networks](https://arxiv.org/pdf/1904.03626.pdf)
+
+More recent work has extended from the concept and provide some ideas around implementation details, such as how to rank samples based on its difficulty, and how to design the pacing function to guide the sampling process.
+
+[Hindsight Experience Replay](https://arxiv.org/pdf/1707.01495.pdf)
+The authors claim that HER is an implicit form of curriculum learning methods.
+
+## Experience Replay Analysis
+
+[Revisiting Fundamentals of Experience Replay](https://arxiv.org/pdf/2007.06700.pdf)
+
+  
+
+> Experience Replay has not yet been well studied in RL literature, and here is one of the most recent. It provides several interesting observations for further analysis,
+> * "Disentangling the effects of replay capacity and oldest policy, finding that increasing replay capacity and decreasing the age of the oldest policy improves performance
+> * Discovering that n-step returns are uniquely critical for taking advantage of an increased replay capacity
+> * Benchmarking n-step returns in the massive replay capacity regime, and finding that it still provides gains despite the substantial off-policyness of the data
+> * Investigating the connection between n-step returns and experience replay, and finding that increasing the replay capacity can help mitigate the variance of n-step targets, which partially explains the improved performance"
+
+  
+
+If we rethink about these observations with the desirable features of non-uniform sampling
+
+* Increasing replay capacity increases the diversity and coverage in the buffer
+
+* Decreasing the age of oldest policy corresponds to shifting more weights to on-policy samples under density-based sampling
+
+* N-step returns is a bit tricky. I have a feeling that it might have an impact on the PER so that it either becomes more uniform or more focused on difficult samples, which fits the stage of a task better despite being under uncorrected gradient updates. It could also be possible that this initial bias away from being on-policy is useful in the sense that it increases the diversity in a batch
+
+  
+
+### Level of Uncertainty and/or Density in different dataset/training regime
+
+  
+
+[On the Relationship between Data Efficiency and Error for Uncertainty Sampling](https://arxiv.org/pdf/1806.06123v1.pdf) 
+
+  
+
+> The authors observed that even fixed active learning algorithms can be hard to generalize across datasets. This observation led them to explore the data efficiency in uncertainty sampling and provided theoretical analysis by comparing the Fisher information of active (through uncertainty sampling) and passive learning (through random sampling). They concluded that there’s an inverse relationship between the data efficiency and limiting error (estimation error of an optimal model), which suggests that, 1) random sampling is better for noisy tasks, 2) one could start with random sampling and only apply uncertainty sampling when the reaching average error less than 10%.
+
+(can look for additional references in this paper; also good reference for problem definition and writeup on uncertainty sampling)
+
+  
+  
+
+[Active Bias: Training More Accurate Neural Networks by Emphasizing High Variance Samples](https://arxiv.org/pdf/1704.07433.pdf)
+
+> Interesting conclusion: when the task is relatively easy, preferring more difficult examples works well; when the dataset is challenging or noisy, emphasizing easier samples often to a better performance
+
+  
+
+Both papers seem to hint at the fact that different levels of emphasis on uncertainty when selecting a batch of training data should be applied for tasks of various difficulty levels. It might be able to further extend to the case of different stages in training an online agent, and maybe even more interestingly, when the underlying data distribution is non-stationary, or multi-modeled (e.g. different noise level in different state space).
+
+  
+
+In parallel, there has been a lot of discussion around the comparison between sampling on-policy and the uniform distribution in trajectory sampling in planning and it shows that on-policy sampling generally provides faster convergence but uniform sampling gives a better convergent performance, in a simple MDP environment [(RLBook2018 P174)](). Suppose we could consider sampling heavily over the on-policy distribution in RL as a density-based method, this comparison can be considered roughly as a density v.s. diversity trade-off, and perhaps it doesn't have to be exclusive, and rather more desirable than one and another in different stages of learning. Perhaps we can even reformulate it into a constraint optimization problem to help us better adapt the level of on-policyness to different datasets and/or training regimes, similar to what we might have done in uncertainty sampling.
+
+  
+
+### Relation between Non-Uniform Sampling and Loss Function
+
+[8][An Equivalence between Loss Functions and Non-Uniform Sampling in Experience Replay](https://arxiv.org/pdf/2007.06049.pdf)
+
+> Relation Btw Sampling and Loss Function; interesting future direction. Being able to convert non-uniform sampling methods into loss functions could potentially give us a meta-learning approach towards learning sample weights by differentiating through Q-learning error of an online agent.
+> Notes this paper suggests that non-uniform sampling is empirically unecessary despite of the variance reduction benefit in theory. It can be replaced with uniform sampling and a modified loss function without affecting performance. (TODO: need to investigate)
+
+  
+  
+
+
+## Other Approaches (Less relevant/Future directions)
+
+### Gradient/Optimization Based
+
+Most gradient-based methods are expensive. So far the ones I've come across are used to reduce interference between samples or gradient variance(similar to low discrepancy sampling?).
+
+#### Importance Sampling/Variance Reduction
+
+[1] [Variance Reduction In Sgd By Distributed Importance Sampling](https://arxiv.org/pdf/1511.06481.pdf)
+
+> weight samples by **gradient norms** (I think it’s just $\frac{dL}{dY}$; but need to better understand how it is computed; also doesn't seem to be obvious how it reduces **variance** with any bounded improvement)
+
+  
+
+[2][Biased Importance Sampling for Deep Neural Network Training](https://arxiv.org/pdf/1706.00043.pdf)
+This paper suggests to use loss values as an alternative to the importance metric
+>Zhao and Zhang (2015) developed more general importance sampling methods that improve the convergence of Stochastic Gradient Descent. In particular, the latter has crucially connected the convergence speed of SGD with the variance of the gradient estimator and has shown that the ***target sampling distribution is the one that minimizes this variance***.
+> **importance metric quite antithetical to most common methods. Curriculum learning (Bengio et al. 2009) and its evolution selfpaced learning (Kumar, Packer, and Koller 2010)
+
+> Suggests to use loss to replace gradient norm as importance weights to reduce variance. This is an interesting view because it is essentially PER without importance sampling correction. 
+
+minimizing the average loss over the training set does not necessarily result in the best model for classification [Shalev-Shwartz, S., and Wexler, Y. 2016. Minimizing the maximal loss: How and why. In Proceedings of the 32nd International Conference on Machine Learning.](http://proceedings.mlr.press/v48/shalev-shwartzb16.pdf)
+
+
+In the paper, we could see that it suffers from similar problems with PER. First, as many papers suggest (shalev-shwartzb16), minimizing maximal loss makes the learning process vulnerable to outliers, and often these algorithms supress the effect with a power term/exponential/root of less than 1(Look into per paper for proper term). Second, the maximal loss objective produces an biased estimator, and is usually corrected with an IS weight. 
+
+[Minimizing the maximal loss: How and why](http://proceedings.mlr.press/v48/shalev-shwartzb16.pdf)
+> shows some analysis to justify the biased estimator problem/uncorrected sample weights maybe okay in classification.
+> In addition, it propose a meta algorithm to convert online learner into a minimizer of $L_{max}$ (TODO: interesting paper; need to revisit)
+
+[3][Not all samples are created equal: Deep learning with importance sampling](https://arxiv.org/pdf/1803.00942.pdf)
+
+> This paper proposes to use loss instead of gradient norm in importance sampling; similar to PER. (TODO: Need to look more into the justifications; It is great where it provides many theoretical discussions and proofs I could learn from)
+
+[Training Deep Models Faster with Robust, Approximate Importance Sampling](http://papers.nips.cc/paper/7957-training-deep-models-faster-with-robust-approximate-importance-sampling.pdf)  
+
+[SVRG/SAGA]()
+#### Interference
+
+[Gradient Episodic Memory for Continual Learning](https://arxiv.org/pdf/1706.08840.pdf)
+
+***[Learning to Learn without Forgetting by Maximizing Transfer and Minimizing Interference](https://arxiv.org/pdf/1810.11910)
+
+[Online Continual Learning with Maximally Interfered Retrieval](https://arxiv.org/abs/1908.04742)
+
+[4] [Gradient based sample selection for online continual learning](https://arxiv.org/pdf/1903.08671.pdf) 
+  
+
+#### Diversity
+
+  
+
+***[Learning to Learn without Forgetting by Maximizing Transfer and Minimizing Interference](https://arxiv.org/pdf/1810.11910)
+
+## Meta-learning Approaches
+
+  
+
+[Learning to Sample: an Active Learning Framework](https://arxiv.org/pdf/1909.03585.pdf)
+
+  
+
+## Environments
+
+### MDP
+
+#### uncertainty
+
+> an MDP with $N$ states, in which a selection of them having a branching factor of 2 with equal transition probability, and where one of them would lead to low reward and another to high reward
+
+#### density
+
+> Would be easy to test in an off-policy setting
+> For on-policy, maybe we could increase buffer size; and it's less about the environment
+
+#### diversity
+
+> an MDP with lots of states and many branching factors
+
+### Gridworld
+  
+  
+
+## Hypothesis and Ideas
+
+- Easy samples tend to have less interference
+
+- As learning progress and changes happen in the environment, the relative difficulty of the task also changes. As a result, we need to adjust the weights of samples accordingly based on their difficulties and density/diversity.
+
+- gradient-based approach (variance reduction; interference; gradient norm and similarities; good compliment)
+
+- soft weights to be meta-learned by differentiating through online loss
+
+- reservoir sampling related (improving the retaining and pruning part of the buffer)
+
+  
+
+***
+
+backlog
+
+  
+
+[Prioritized Sequence Experience Replay](https://arxiv.org/pdf/1905.12726v2.pdf)
+
+  
+
+[Active Learning Sampling Strategies](https://towardsdatascience.com/active-learning-sampling-strategies-f8d8ac7037c8)
+
+>good overview
+
+>
+
+[Learning as a Sampling Problem](https://escholarship.org/uc/item/15m8j5hp#article_abstract)
+
+> mostly RL; explore|meta|transfer
+
+>
+
+[Transfer of Samples in Policy Search via Multiple Importance Sampling](http://proceedings.mlr.press/v97/tirinzoni19a/tirinzoni19a.pdf)
+
+[An Efficient Active Learning Method Based on Random Sampling and Backward Deletion](https://link.springer.com/chapter/10.1007/978-3-642-36669-7_83)
+
+  
+  
+
+[(More) Efficient Reinforcement Learning via Posterior Sampling](https://papers.nips.cc/paper/5185-more-efficient-reinforcement-learning-via-posterior-sampling.pdf)
+
+> exploration related; posterior sampling for reinforcement learning
+
+>
+
+[Reinforcement Learning with Non-uniform State Representations for Adaptive Search](http://www.cim.mcgill.ca/~mrl/pubs/sandeep/SSRR2018.pdf)
+
+> less related than the title suggests
+
+>
+
+[Incremental Without Replacement Sampling in Nonconvex Optimization](https://arxiv.org/pdf/2007.07557v1.pdf)
+
+  
+
+[Ranking and benchmarking framework for sampling algorithms on synthetic data streams](https://arxiv.org/pdf/2006.09895v1.pdf)
+
+  
+
+Minor Question:
+
+Is there a relationship btw density-based sampling and mcmc?
+
+  
+
+Footnote
+
+\* important
+
+*** Composite Sampling approaches that exploited more than one aspect
+
+  
+
+[comment]: <> (Tree, Connection btw papers, Diversity, read RLBook on feature discovery)
