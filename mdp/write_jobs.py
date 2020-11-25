@@ -4,13 +4,14 @@ from itertools import product
 
 import numpy as np
 import pandas as pd
+from configs import ROOT_DIR
 from fastprogress.fastprogress import master_bar, progress_bar
 
 MAX_EVALS=5
 count = 0
 
 
-cur_dir = pathlib.Path(__file__).parent.absolute()
+cur_dir = ROOT_DIR/"mdp"
 
 def create_job(agent_type, hyper_params):
     global count

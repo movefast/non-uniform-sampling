@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
+from configs import ROOT_DIR
 from fastprogress.fastprogress import master_bar, progress_bar
 from matplotlib import animation
 from matplotlib import pyplot as plt
@@ -38,7 +39,7 @@ nb_dir = os.path.split(os.getcwd())[0]
 if nb_dir not in sys.path:
     sys.path.append(nb_dir)
 
-cur_dir = pathlib.Path(__file__).parent.absolute()
+cur_dir = ROOT_DIR/"mdp"
     
 # random policy
 def get_pred_error(agent, epsilon_greedy=False):
