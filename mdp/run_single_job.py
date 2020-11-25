@@ -29,8 +29,8 @@ from mdp.per_agent import LinearAgent as PERAgent
 from mdp.sarsa_agent import QLearningAgent as SarsaAgent
 
 gamma = .9
-num_states = 20
-num_runs = 1
+num_states = 100
+num_runs = 10
 num_episodes = 300
 
 
