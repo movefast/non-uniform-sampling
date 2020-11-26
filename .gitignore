@@ -6,6 +6,7 @@ results.tar
 # ignore python caches
 mdp/jobs/
 mdp/metrics/
+mdp/plots/
 __pycache__
 *.pyc
 
