@@ -65,21 +65,20 @@ def plot_metric(ax, env, algorithm, metric_name):
 for file in glob.glob(str(ROOT_DIR/'mdp/metrics/*')):
     dict_merge(metrics, torch.load(file))
 
-filtered_agent_list = ["Uniform", "PER", "GEO", "CER"]
+filtered_agent_list = ["Uniform", "PER", "GEO", "CER", "Sarsa"]
+y_lims = {"msbpe","ve", "all_reward_sums"}
 
 
 for metric_name in ["msbpe","ve", "all_reward_sums"]:
-    fig = plt.figure(figsize=(20,10))
+    fig = plt.figure(figsize=(20,20))
     fig.subplots_adjust(hspace=0.4, wspace=0.4)
 
     for env in env_infos:
         for i, agent_name in enumerate(filtered_agent_list):
-            ax = fig.add_subplot(2, 2, i+1)
+            ax = fig.add_subplot(3, 2, i+1)
             agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
             metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
             sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
-            if metric_name != "all_reward_sums":
-                sorted_agent_name_pairs = sorted_agent_name_pairs[::-1]
             for _, algorithm in sorted_agent_name_pairs[:5]:
                 plot_metric(ax, env, algorithm, metric_name)
     fig.text(0.5, 0.04, 'Episodes', ha='center')
