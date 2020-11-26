@@ -27,7 +27,9 @@ env_infos = {
 }
 
 num_episodes = 300
-num_runs = 10
+
+from run_single_job import num_runs
+
 
 def dict_merge(dct, merge_dct):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
