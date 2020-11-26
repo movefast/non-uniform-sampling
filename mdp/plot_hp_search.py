@@ -59,7 +59,7 @@ def plot_metric(ax, env, algorithm, metric_name):
     else:
         algorithm_means = np.mean(metrics[metric_name][env][algorithm], axis=0)
     algorithm_stds = np.std(metrics[metric_name][env][algorithm], axis=0)
-    print(algorithm, np.around(np.mean(algorithm_means),decimals=4), np.around(np.mean(algorithm_stds),decimals=4))
+    print(algorithm, np.around(np.mean(algorithm_means),decimals=4), np.around(np.mean(algorithm_stds),decimals=4), sep='\t'))
     ax.plot(algorithm_means, label=env_names_in_plot.get(env,env)+'_'+agent_names_in_plot.get(algorithm, algorithm),
              alpha=0.5)
 #     ax.set_ylim(0,.005)
