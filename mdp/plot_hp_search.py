@@ -19,6 +19,7 @@ titles = {"msbpe":'MSPBE',"ve":'Value Error (VE)', "all_reward_sums":'Sum of Rew
 filtered_agent_list = ["Uniform", "PER", "GEO", "CER", "Sarsa"]
 y_lims = {"msbpe","ve", "all_reward_sums"}
 y_labels = {"msbpe":"MSPBE","ve":"Value Error (VE)", "all_reward_sums":"Sum of Rewards"}
+stats_metric = {"msbpe":"AUC","ve":"AUC", "all_reward_sums":"Average Rewards"}
 
 env_infos = {
     'MDP': {
@@ -82,6 +83,8 @@ def plot_param_search():
         fig = plt.figure(figsize=(20,20))
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
 
+        print("agent", stats_metric[metric_name], "SEM", sep='\t')
+
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
                 ax = fig.add_subplot(3, 2, i+1)
@@ -100,7 +103,7 @@ def plot_param_search():
 
 def plot_best_learning_curves():
     for metric_name in ["msbpe","ve", "all_reward_sums"]:
-        print("agent", metric_name, "SEM", sep='\t')
+        print("agent", stats_metric[metric_name], "SEM", sep='\t')
         fig, ax = plt.subplots(figsize=(20,10))
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
