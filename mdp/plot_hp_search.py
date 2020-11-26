@@ -59,7 +59,11 @@ def plot_metric(ax, env, algorithm, metric_name):
     else:
         algorithm_means = np.mean(metrics[metric_name][env][algorithm], axis=0)
     algorithm_stds = np.std(metrics[metric_name][env][algorithm], axis=0)
-    print(algorithm, np.around(np.mean(algorithm_means),decimals=4), np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1))/np.sqrt(num_runs),decimals=4), sep='\t')
+    if metric_name == "all_reward_sums":
+        print(algorithm, np.around(np.mean(algorithm_means),decimals=4), np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1))/np.sqrt(num_runs),decimals=4), sep='\t')
+    else:
+        print(algorithm, np.around(np.mean(algorithm_means)*300,decimals=4), np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1)*300)/np.sqrt(num_runs),decimals=4), sep='\t')
+
     ax.plot(algorithm_means, label=env_names_in_plot.get(env,env)+'_'+agent_names_in_plot.get(algorithm, algorithm),
              alpha=0.5)
 #     ax.set_ylim(0,.005)
