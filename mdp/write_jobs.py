@@ -7,7 +7,7 @@ import pandas as pd
 from configs import ROOT_DIR
 from fastprogress.fastprogress import master_bar, progress_bar
 
-MAX_EVALS=5
+MAX_EVALS=100
 count = 0
 
 
@@ -101,7 +101,7 @@ params_to_search = {
 for agent_type in master_bar(list(agents.keys())):
     print(agent_type)
     if agent_type in ('PER', 'GEO'):
-        random_search(agent_type, params_to_search[agent_type], max_evals=25)
+        random_search(agent_type, params_to_search[agent_type])
     else:
         grid_search(agent_type, params_to_search[agent_type])
 
