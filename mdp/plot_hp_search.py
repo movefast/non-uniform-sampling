@@ -1,6 +1,7 @@
 import collections
 import glob
 
+import fire
 import numpy as np
 import pandas as pd
 import torch
@@ -12,9 +13,12 @@ metrics = {"msbpe":{},"ve":{}, "all_reward_sums": {}, "hyper_params": {}}
 # results = pd.DataFrame(columns = ['agent', 'score', 'params'],
 #                                   index = list(range(MAX_EVALS)))
 
-tmp={"NN": "Uniform", "NNP": "Uncertainty", "NNT":"Diversity"}
-tmp1={'DoorWorldWide3':'GridWorldD3','DoorWorldWide11':'DoorWorldWide13X13D4'}
+agent_names_in_plot={"NN": "Uniform", "NNP": "Uncertainty", "NNT":"Diversity"}
+env_names_in_plot={'DoorWorldWide3':'GridWorldD3','DoorWorldWide11':'DoorWorldWide13X13D4'}
 titles = {"msbpe":'MSPBE',"ve":'Value Error (VE)', "all_reward_sums":'Sum of Rewards'}
+filtered_agent_list = ["Uniform", "PER", "GEO", "CER", "Sarsa"]
+y_lims = {"msbpe","ve", "all_reward_sums"}
+y_labels = {"msbpe":"MSPBE","ve":"Value Error (VE)", "all_reward_sums":"Sum of Rewards"}
 
 env_infos = {
     'MDP': {
@@ -27,8 +31,7 @@ env_infos = {
 }
 
 num_episodes = 300
-
-from run_single_job import num_runs
+from mdp.run_single_job import num_runs
 
 
 def dict_merge(dct, merge_dct):
@@ -56,7 +59,7 @@ def plot_metric(ax, env, algorithm, metric_name):
     else:
         algorithm_means = np.mean(metrics[metric_name][env][algorithm], axis=0)
     algorithm_stds = np.std(metrics[metric_name][env][algorithm], axis=0)
-    ax.plot(algorithm_means, label=tmp1.get(env,env)+'_'+tmp.get(algorithm, algorithm),
+    ax.plot(algorithm_means, label=env_names_in_plot.get(env,env)+'_'+agent_names_in_plot.get(algorithm, algorithm),
              alpha=0.5)
 #     ax.set_ylim(0,.005)
     if metric_name == "msbpe":
@@ -69,27 +72,57 @@ def plot_metric(ax, env, algorithm, metric_name):
 for file in glob.glob(str(ROOT_DIR/'mdp/metrics/*')):
     dict_merge(metrics, torch.load(file))
 
-filtered_agent_list = ["Uniform", "PER", "GEO", "CER", "Sarsa"]
-y_lims = {"msbpe","ve", "all_reward_sums"}
+def plot_param_search():
+    for metric_name in ["msbpe","ve", "all_reward_sums"]:
+        fig = plt.figure(figsize=(20,20))
+        fig.subplots_adjust(hspace=0.4, wspace=0.4)
+
+        for env in env_infos:
+            for i, agent_name in enumerate(filtered_agent_list):
+                ax = fig.add_subplot(3, 2, i+1)
+                agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
+                metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
+                sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
+                for _, algorithm in sorted_agent_name_pairs[:5]:
+                    plot_metric(ax, env, algorithm, metric_name)
+        fig.text(0.5, 0.04, 'Episodes', ha='center')
+        fig.text(0.04, 0.5, titles[metric_name], va='center', rotation='vertical')
+
+        fig.suptitle("Learning Rate Sweep")
+
+        plt.savefig(ROOT_DIR/f'mdp/plots/params_{metric_name}.png')
 
 
-for metric_name in ["msbpe","ve", "all_reward_sums"]:
-    fig = plt.figure(figsize=(20,20))
-    fig.subplots_adjust(hspace=0.4, wspace=0.4)
+def plot_best_learning_curves():
+    for metric_name in ["msbpe","ve", "all_reward_sums"]:
+        fig, ax = plt.subplots(figsize=(20,10))
+        for env in env_infos:
+            for i, agent_name in enumerate(filtered_agent_list):
+                agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
+                for algorithm in agent_names:
+                    plot_metric(ax, env, algorithm, metric_name)
 
-    for env in env_infos:
-        for i, agent_name in enumerate(filtered_agent_list):
-            ax = fig.add_subplot(3, 2, i+1)
-            agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
-            metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
-            sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
-            for _, algorithm in sorted_agent_name_pairs[:5]:
-                plot_metric(ax, env, algorithm, metric_name)
-    fig.text(0.5, 0.04, 'Episodes', ha='center')
-    fig.text(0.04, 0.5, titles[metric_name], va='center', rotation='vertical')
+            plt.ylabel(y_labels[metric_name],rotation=0, labelpad=20)
+            plt.xlabel("Episodes")
+            # plt.ylim(0,.002)
+            # plt.ylim(-150,-5)
+            # plt.ylim(-800,-5)
+            # plt.ylim(0,.006)
+            # plt.plot([0,500],[-18,-18])
+            # plt.title("Nonstationary Policy in 20-state RandomWalk (buffer_size=1000)")
+            plt.title("Nonstationary Policy in 100-state RandomWalk (buffer_size=1000)")
+            # plt.title("Random Policy in 20-state RandomWalk (buffer_size=1000)")
 
-    fig.suptitle("Learning Rate Sweep")
+            # plt.legend()
+            plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}.png')
 
 
+def plot(plot_type):
+    if plot_type == "params":
+        plot_param_search()
+    elif plot_type == "lc":
+        plot_best_learning_curves()
 
-    plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}.png')
+
+if __name__ == '__main__':
+    fire.Fire(plot)
