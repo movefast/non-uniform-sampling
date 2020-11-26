@@ -57,6 +57,8 @@ def plot_metric(ax, env, algorithm, metric_name):
     ax.plot(algorithm_means, label=tmp1.get(env,env)+'_'+tmp.get(algorithm, algorithm),
              alpha=0.5)
 #     ax.set_ylim(0,.005)
+    if metric_name == "msbpe":
+        ax.set_ylim(0,.0015)
 #     ax.set_ylim(-50,-5)
 #     ax.set_ylim(0,.6)
     ax.fill_between(range(num_episodes), algorithm_means + algorithm_stds/np.sqrt(num_runs), algorithm_means - algorithm_stds/np.sqrt(num_runs), alpha=0.2)
