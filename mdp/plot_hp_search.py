@@ -33,6 +33,7 @@ env_infos = {
 
 num_episodes = 300
 from mdp.run_single_job import num_runs
+from mdp.write_jobs import params_to_search
 
 
 def dict_merge(dct, merge_dct):
@@ -61,12 +62,11 @@ def plot_metric(ax, env, algorithm, metric_name):
         algorithm_means = np.mean(metrics[metric_name][env][algorithm], axis=0)
     algorithm_stds = np.std(metrics[metric_name][env][algorithm], axis=0)
     if metric_name == "all_reward_sums":
-        print(algorithm, np.around(np.mean(algorithm_means),decimals=4), np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1))/np.sqrt(num_runs),decimals=4), sep='\t')
+        print(algorithm, -np.around(np.mean(algorithm_means),decimals=4), np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1))/np.sqrt(num_runs),decimals=4), sep='\t')
     else:
         print(algorithm, np.around(np.mean(algorithm_means)*300,decimals=4), np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1)*300)/np.sqrt(num_runs),decimals=4), sep='\t')
 
-    ax.plot(algorithm_means, label=env_names_in_plot.get(env,env)+'_'+agent_names_in_plot.get(algorithm, algorithm),
-             alpha=0.5)
+    ax.plot(algorithm_means, label=env_names_in_plot.get(env,env)+'_'+agent_names_in_plot.get(algorithm, algorithm), alpha=0.5)
 #     ax.set_ylim(0,.005)
     if metric_name == "msbpe":
         ax.set_ylim(0,.0015)
@@ -82,7 +82,7 @@ def plot_param_search():
     for metric_name in ["msbpe","ve", "all_reward_sums"]:
         fig = plt.figure(figsize=(20,20))
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
-
+        print(metric_name)
         print("agent", stats_metric[metric_name], "SEM", sep='\t')
 
         for env in env_infos:
@@ -103,6 +103,7 @@ def plot_param_search():
 
 def plot_best_learning_curves():
     for metric_name in ["msbpe","ve", "all_reward_sums"]:
+        print(metric_name)
         print("agent", stats_metric[metric_name], "SEM", sep='\t')
         fig, ax = plt.subplots(figsize=(20,10))
         for env in env_infos:
@@ -125,12 +126,46 @@ def plot_best_learning_curves():
             # plt.legend()
             plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}.png')
 
+def get_metric_stats(env, metric_name, algorithm):
+    if metric_name == "all_reward_sums":
+        algorithm_stats = -np.around(np.mean(metrics[metric_name][env][algorithm]),decimals=4)
+    else:
+        algorithm_stats = np.around(np.mean(metrics[metric_name][env][algorithm])*300,decimals=4)
+    return algorithm_stats
+
+
+def plot_parameter_sensitivity():
+    env = 'MDP'
+    for metric_name in ["all_reward_sums"]:
+        print(metric_name)
+        for param in set([e for l in [list(v.keys()) for k, v in params_to_search.items()] for e in l]):
+            fig = plt.figure(figsize=(20,10))
+            agent_list_for_param =  [agent_type for agent_type in filtered_agent_list if param in params_to_search[agent_type]]
+            for agent_type in agent_list_for_param:
+                x_values = []
+                y_values = []
+                for val in params_to_search[agent_type][param]:
+                    print(agent_type, param, val)
+                    agent_names = list(filter(lambda x: x.startswith(agent_type) and f'{param}_{val}' in x,  list(metrics[metric_name][env].keys())))
+                    print(agent_names)
+                    lst_of_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
+                    if lst_of_stats:
+                        x_values.append(val)
+                        y_values.append(max(lst_of_stats))
+                print(x_values, y_values)
+                plt.plot(x_values,y_values, label=agent_type, alpha=1)
+            plt.legend()
+            plt.title(f"Sensitivity Analysis in 100-state RandomWalk ({metric_name} | {param})")
+            plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}_{param}_param_study.png')
+            
 
 def plot(plot_type):
     if plot_type == "params":
         plot_param_search()
     elif plot_type == "lc":
         plot_best_learning_curves()
+    elif plot_type == "sensitivity":
+        plot_parameter_sensitivity()
 
 
 if __name__ == '__main__':

@@ -98,12 +98,13 @@ params_to_search = {
 }
 
 
-for agent_type in master_bar(list(agents.keys())):
-    print(agent_type)
-    if agent_type in ('PER', 'GEO'):
-        random_search(agent_type, params_to_search[agent_type])
-    else:
-        grid_search(agent_type, params_to_search[agent_type])
+if __name__ == "__main__":
+    for agent_type in master_bar(list(agents.keys())):
+        print(agent_type)
+        if agent_type in ('PER', 'GEO'):
+            random_search(agent_type, params_to_search[agent_type])
+        else:
+            grid_search(agent_type, params_to_search[agent_type])
 
-    print('Jobs: sbatch --array={}-{} ./mdp/jobs/run_cpu.sh'.format(0, count-1))
-    
+        print('Jobs: sbatch --array={}-{} ./mdp/jobs/run_cpu.sh'.format(0, count-1))
+        
