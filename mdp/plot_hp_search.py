@@ -166,8 +166,7 @@ def plot_parameter_sensitivity():
                         y_values.append(max(lst_of_stats))
                         error_bars.append(max(list(zip(lst_of_stats, lst_of_stes)))[1])
                 print(x_values, y_values)
-                ax.plot(x_values,y_values, label=agent_type, alpha=1)
-                ax.errorbar(x_values, y_values, yerr=error_bars, capsize=5, elinewidth=1)#, markeredgewidth=10)
+                ax.errorbar(x_values, y_values, label=agent_type, yerr=error_bars, capsize=5, elinewidth=1)#, markeredgewidth=10)
 
 
             ax.legend()
