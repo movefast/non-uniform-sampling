@@ -129,34 +129,53 @@ def plot_best_learning_curves():
 def get_metric_stats(env, metric_name, algorithm):
     if metric_name == "all_reward_sums":
         algorithm_stats = -np.around(np.mean(metrics[metric_name][env][algorithm]),decimals=4)
+        ste = np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1))/np.sqrt(num_runs),decimals=4)
     else:
         algorithm_stats = np.around(np.mean(metrics[metric_name][env][algorithm])*300,decimals=4)
-    return algorithm_stats
+        ste = np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1)*300)/np.sqrt(num_runs),decimals=4)
+    return algorithm_stats, ste
+
+import math
 
 
 def plot_parameter_sensitivity():
     env = 'MDP'
+    fig = plt.figure(figsize=(20,10))
     for metric_name in ["all_reward_sums"]:
         print(metric_name)
-        for param in set([e for l in [list(v.keys()) for k, v in params_to_search.items()] for e in l]):
-            fig = plt.figure(figsize=(20,10))
+        unique_params = set([e for l in [list(v.keys()) for k, v in params_to_search.items()] for e in l])
+        for i, param in enumerate(unique_params):
+            ax = fig.add_subplot(3, math.ceil(len(unique_params)/3), i+1)
             agent_list_for_param =  [agent_type for agent_type in filtered_agent_list if param in params_to_search[agent_type]]
+            try:
+                agent_list_for_param.remove("Sarsa") 
+            except:
+                pass
             for agent_type in agent_list_for_param:
                 x_values = []
                 y_values = []
+                error_bars = []
                 for val in params_to_search[agent_type][param]:
                     print(agent_type, param, val)
                     agent_names = list(filter(lambda x: x.startswith(agent_type) and f'{param}_{val}' in x,  list(metrics[metric_name][env].keys())))
                     print(agent_names)
-                    lst_of_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
-                    if lst_of_stats:
+                    metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
+                    if metric_stats:
+                        lst_of_stats, lst_of_stes = list(zip(*metric_stats))
                         x_values.append(val)
                         y_values.append(max(lst_of_stats))
+                        error_bars.append(max(list(zip(lst_of_stats, lst_of_stes)))[1])
                 print(x_values, y_values)
-                plt.plot(x_values,y_values, label=agent_type, alpha=1)
-            plt.legend()
-            plt.title(f"Sensitivity Analysis in 100-state RandomWalk ({metric_name} | {param})")
-            plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}_{param}_param_study.png')
+                ax.plot(x_values,y_values, label=agent_type, alpha=1)
+                ax.errorbar(x_values, y_values, yerr=error_bars, capsize=5, elinewidth=1)#, markeredgewidth=10)
+
+
+            ax.legend()
+            ax.set_title('{param}')
+            if param == "step_size":
+                ax.set_xscale("log")
+    plt.suptitle(f"Sensitivity Analysis in 100-state RandomWalk ({metric_name})")
+    plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}_param_study.png')
             
 
 def plot(plot_type):
@@ -170,3 +189,34 @@ def plot(plot_type):
 
 if __name__ == '__main__':
     fire.Fire(plot)
+
+
+# def plot_parameter_sensitivity():
+#     env = 'MDP'
+#     for metric_name in ["all_reward_sums"]:
+#         print(metric_name)
+#         for param in set([e for l in [list(v.keys()) for k, v in params_to_search.items()] for e in l]):
+#             fig = plt.figure(figsize=(20,10))
+#             agent_list_for_param =  [agent_type for agent_type in filtered_agent_list if param in params_to_search[agent_type]]
+#             for agent_type in agent_list_for_param:
+#                 x_values = []
+#                 y_values = []
+#                 error_bars = []
+#                 for val in params_to_search[agent_type][param]:
+#                     print(agent_type, param, val)
+#                     agent_names = list(filter(lambda x: x.startswith(agent_type) and f'{param}_{val}' in x,  list(metrics[metric_name][env].keys())))
+#                     print(agent_names)
+#                     metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
+#                     if metric_stats:
+#                         lst_of_stats, lst_of_stes = list(zip(*metric_stats))
+#                         x_values.append(val)
+#                         y_values.append(max(lst_of_stats))
+#                         error_bars.append(max(list(zip(lst_of_stats, lst_of_stes)))[1])
+#                 print(x_values, y_values)
+#                 plt.plot(x_values,y_values, label=agent_type, alpha=1)
+#                 plt.errorbar(x_values, y_values, yerr=error_bars, capsize=5, elinewidth=1)#, markeredgewidth=10)
+
+
+#             plt.legend()
+#             plt.title(f"Sensitivity Analysis in 100-state RandomWalk ({metric_name} | {param})")
+#             plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}_{param}_param_study.png')
