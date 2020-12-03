@@ -169,14 +169,17 @@ def plot_parameter_sensitivity():
                 x_values = []
                 y_values = []
                 error_bars = []
-                for val in params_to_search[agent_type][param]:
+                for j, val in enumerate(params_to_search[agent_type][param]):
                     print(agent_type, param, val)
                     agent_names = list(filter(lambda x: x.startswith(agent_type) and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
                     print(agent_names)
                     metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
                     if metric_stats:
                         lst_of_stats, lst_of_stes = list(zip(*metric_stats))
-                        x_values.append(val)
+                        if param == "step_size":
+                            x_values.append(j)
+                        else:
+                            x_values.append(val)
                         y_values.append(max(lst_of_stats))
                         error_bars.append(max(list(zip(lst_of_stats, lst_of_stes)))[1])
                 print(x_values, y_values)
