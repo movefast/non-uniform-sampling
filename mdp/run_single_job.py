@@ -34,7 +34,7 @@ from mdp.sarsa_lambda import QLearningAgent as SarsaLAgent
 
 gamma = .99
 num_states = 100
-num_runs = 10
+num_runs = 25
 num_episodes = 300
 
 

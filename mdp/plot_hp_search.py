@@ -92,11 +92,10 @@ def plot_param_search():
                 agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
                 metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
                 sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
-                if metric_name == "all_reward_sums":
-                    for j, (_, algorithm) in enumerate(sorted_agent_name_pairs[:5]):
-                        plot_metric(ax, env, algorithm, metric_name)
-                        if j == 0:
-                            best_agent_names.append(algorithm)
+                for j, (_, algorithm) in enumerate(sorted_agent_name_pairs[:5]):
+                    plot_metric(ax, env, algorithm, metric_name)
+                    if metric_name == "all_reward_sums" and j == 0:
+                        best_agent_names.append(algorithm)
         fig.text(0.5, 0.04, 'Episodes', ha='center')
         fig.text(0.04, 0.5, titles[metric_name], va='center', rotation='vertical')
 
