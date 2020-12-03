@@ -16,7 +16,7 @@ metrics = {"msbpe":{},"ve":{}, "all_reward_sums": {}, "hyper_params": {}}
 agent_names_in_plot={"NN": "Uniform", "NNP": "Uncertainty", "NNT":"Diversity"}
 env_names_in_plot={'DoorWorldWide3':'GridWorldD3','DoorWorldWide11':'DoorWorldWide13X13D4'}
 titles = {"msbpe":'MSPBE',"ve":'Value Error (VE)', "all_reward_sums":'Sum of Rewards'}
-filtered_agent_list = ["Uniform", "PER", "GEO", "CER", "Sarsa"]
+filtered_agent_list = ["Uniform", "PER", "GEO", "CER", "Sarsa_lambda"]
 y_lims = {"msbpe","ve", "all_reward_sums"}
 y_labels = {"msbpe":"MSPBE","ve":"Value Error (VE)", "all_reward_sums":"Sum of Rewards"}
 stats_metric = {"msbpe":"AUC","ve":"AUC", "all_reward_sums":"Average Rewards"}
@@ -157,7 +157,7 @@ def plot_parameter_sensitivity():
     fig = plt.figure(figsize=(20,10))
     for metric_name in ["all_reward_sums"]:
         print(metric_name)
-        unique_params = set([e for l in [list(v.keys()) for k, v in params_to_search.items()] for e in l])
+        unique_params = set([e for l in [list(v.keys()) for k, v in params_to_search.items() if k in filtered_agent_list] for e in l])
         for i, param in enumerate(unique_params):
             ax = fig.add_subplot(3, math.ceil(len(unique_params)/3), i+1)
             agent_list_for_param =  [agent_type for agent_type in filtered_agent_list if param in params_to_search[agent_type]]
