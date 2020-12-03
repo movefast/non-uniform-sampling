@@ -85,14 +85,19 @@ def plot_param_search():
         print(metric_name)
         print("agent", stats_metric[metric_name], "SEM", sep='\t')
 
+        best_agent_names = []
+
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
                 ax = fig.add_subplot(3, 2, i+1)
                 agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
                 metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
                 sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
-                for _, algorithm in sorted_agent_name_pairs[:5]:
+                
+                for j, (_, algorithm) in enumerate(sorted_agent_name_pairs[:5]):
                     plot_metric(ax, env, algorithm, metric_name)
+                    if j == 0:
+                        best_agent_names.append(algorithm)
         fig.text(0.5, 0.04, 'Episodes', ha='center')
         fig.text(0.04, 0.5, titles[metric_name], va='center', rotation='vertical')
 
@@ -100,6 +105,15 @@ def plot_param_search():
 
         plt.savefig(ROOT_DIR/f'mdp/plots/params_{metric_name}.png')
 
+        # plot best learning curves
+        fig, ax = plt.subplots(figsize=(20,10))
+        for algorithm in best_agent_names:
+            plot_metric(ax, env, algorithm, metric_name)
+        
+        plt.ylabel(y_labels[metric_name],rotation=0, labelpad=20)
+        plt.xlabel("Episodes")
+        plt.title("Nonstationary Policy in 100-state RandomWalk (buffer_size=1000)")
+        plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}.png')
 
 def plot_best_learning_curves():
     for metric_name in ["msbpe","ve", "all_reward_sums"]:
@@ -147,10 +161,10 @@ def plot_parameter_sensitivity():
         for i, param in enumerate(unique_params):
             ax = fig.add_subplot(3, math.ceil(len(unique_params)/3), i+1)
             agent_list_for_param =  [agent_type for agent_type in filtered_agent_list if param in params_to_search[agent_type]]
-            try:
-                agent_list_for_param.remove("Sarsa") 
-            except:
-                pass
+            # try:
+            #     agent_list_for_param.remove("Sarsa") 
+            # except:
+            #     pass
             for agent_type in agent_list_for_param:
                 x_values = []
                 y_values = []
