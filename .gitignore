@@ -15,3 +15,6 @@ test.json
 
 # ignore editor settings
 .vscode
+
+# ignore jupyter notebook cache
+*.ipynb_checkpoints

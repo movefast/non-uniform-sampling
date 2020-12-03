@@ -25,9 +25,12 @@ from mdp.env.policies import Policy
 from mdp.env.random_walk import RandomWalk
 from mdp.geo_agent import LinearAgent as GEOAgent
 from mdp.mdp_env import MazeEnvironment
+from mdp.meta_cer_agent import LinearAgent as MCERAgent
+from mdp.meta_per_agent import LinearAgent as MPERAgent
 from mdp.nn_agent import LinearAgent as NNAgent
 from mdp.per_agent import LinearAgent as PERAgent
 from mdp.sarsa_agent import QLearningAgent as SarsaAgent
+from mdp.sarsa_lambda import QLearningAgent as SarsaLAgent
 
 gamma = .99
 num_states = 100
@@ -47,7 +50,7 @@ def get_pred_error(agent, epsilon_greedy=False):
     rw_env = RandomWalk(num_states)
     X = np.eye(rw_env.states)
     X = np.vstack([X, np.zeros((1,rw_env.states))])
-    if type(agent) is SarsaAgent:
+    if type(agent) is SarsaAgent or type(agent) is SarsaLAgent:
         action_values = torch.from_numpy(agent.q[1:]).float()
     else:
         action_values = agent.nn.i2o.weight.t()[1:]
@@ -103,7 +106,7 @@ def run_episode(env, agent, state_visits=None, keep_history=False):
             state_visits[state[0]] += 1
     
     targets = np.flip([gamma**n for n in range(1,num_states+1)]).copy()# * (1 - agent.epsilon / 2)
-    if type(agent) is SarsaAgent:
+    if type(agent) is SarsaAgent or type(agent) is SarsaLAgent:
         predictions = agent.q.max(axis=1)[1:-1] * (1 - agent.epsilon) \
             + agent.epsilon * agent.q.min(axis=1)[1:-1]
     else:
@@ -142,13 +145,19 @@ agents = {
     "GEO": GEOAgent,
     "CER": CERAgent,
     "Sarsa": SarsaAgent,
+    "Sarsa_lambda": SarsaLAgent,
+    "Meta_PER": MPERAgent,
+    "Meta_CER": MCERAgent,
 }
 agent_infos = {
-    "Sarsa": {"step_size": .1, "buffer_size": 100, "batch_size": 1},
+    # "Sarsa": {"step_size": .1, "buffer_size": 100, "batch_size": 1},
+    "Sarsa_lambda": {"step_size": .1, "buffer_size": 100, "batch_size": 1, "lambda":.9},
     "Uniform": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10},
     "CER": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "k":1},
     "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4},
     "GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":.00003, "p":.1},
+    "Meta_PER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4},
+    "Meta_CER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "k":1},
 }
 
 
