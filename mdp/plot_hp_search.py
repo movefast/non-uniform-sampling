@@ -171,7 +171,7 @@ def plot_parameter_sensitivity():
                 error_bars = []
                 for val in params_to_search[agent_type][param]:
                     print(agent_type, param, val)
-                    agent_names = list(filter(lambda x: x.startswith(agent_type) and f'{param}_{val}' in x,  list(metrics[metric_name][env].keys())))
+                    agent_names = list(filter(lambda x: x.startswith(agent_type) and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
                     print(agent_names)
                     metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
                     if metric_stats:
