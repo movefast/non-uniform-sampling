@@ -187,7 +187,7 @@ def plot_parameter_sensitivity():
 
             ax.legend()
             ax.set_title(f'{param}')
-            ax.set_y_scale("log")
+            ax.set_y_scale("syslog")
             # if param == "step_size":
             #     ax.set_xscale("log")
     plt.suptitle(f"Sensitivity Analysis in 100-state RandomWalk ({metric_name})")
