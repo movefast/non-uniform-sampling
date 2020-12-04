@@ -62,7 +62,8 @@ class LinearAgent(agent.BaseAgent):
         self.weights_init(self.nn)
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.update_target()
-        self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
+        # self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
+        self.optimizer = torch.optim.SGD(self.nn.parameters(), lr=self.step_size)
         self.buffer = ReplayMemory(self.buffer_size)
         self.tau = 0.5
         self.updates = 0
