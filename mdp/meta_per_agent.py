@@ -61,14 +61,22 @@ class LinearAgent(agent.BaseAgent):
         self.buffer_beta = agent_init_info["buffer_beta"]
         self.beta_increment = agent_init_info.get("beta_increment", 0.001)
 
+        self.online_opt = agent_init_info.get("online_opt")
+
         self.correction = agent_init_info["correction"]
 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.update_target()
-        # self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
-        self.optimizer = torch.optim.SGD(self.nn.parameters(), lr=self.step_size)
+        
+        self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
+        if self.online_opt == "sgd":
+            self.online_optimizer = torch.optim.SGD(self.nn.parameters(), lr=self.step_size)
+        elif self.online_opt == "adam":
+            self.online_optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
+        else:
+            raise NotImplementedError("you chose an optimizer other than sgd and adam")
         self.buffer = Memory(self.buffer_size, self.buffer_alpha, self.buffer_beta, self.beta_increment)
         self.tau = 0.5
         self.updates = 0
@@ -231,7 +239,7 @@ class LinearAgent(agent.BaseAgent):
         loss.backward()
         for param in self.nn.parameters():
             param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
+        self.online_optimizer.step()
 
     def update(self):
         # target network update

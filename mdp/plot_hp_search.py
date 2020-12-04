@@ -16,7 +16,10 @@ metrics = {"msbpe":{},"ve":{}, "all_reward_sums": {}, "hyper_params": {}}
 agent_names_in_plot={"NN": "Uniform", "NNP": "Uncertainty", "NNT":"Diversity"}
 env_names_in_plot={'DoorWorldWide3':'GridWorldD3','DoorWorldWide11':'DoorWorldWide13X13D4'}
 titles = {"msbpe":'MSPBE',"ve":'Value Error (VE)', "all_reward_sums":'Sum of Rewards'}
+# sarsa lamda experiment
 filtered_agent_list = ["Uniform", "PER", "GEO", "CER", "Sarsa_lambda"]
+# meta learn experiment
+filtered_agent_list = ["Uniform", "PER", "CER", "Meta_CER", "Meta_PER"]
 y_lims = {"msbpe","ve", "all_reward_sums"}
 y_labels = {"msbpe":"MSPBE","ve":"Value Error (VE)", "all_reward_sums":"Sum of Rewards"}
 stats_metric = {"msbpe":"AUC","ve":"AUC", "all_reward_sums":"Average Rewards"}

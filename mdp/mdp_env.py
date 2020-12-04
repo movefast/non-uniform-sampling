@@ -101,9 +101,9 @@ class MazeEnvironment(BaseEnvironment):
             # reward = 0.0
             is_terminal = True
 
-        if self.current_state == [0,0]:
-            reward = 0.0
-            is_terminal = True
+        # if self.current_state == [0,0]:
+        #     reward = 0.0
+        #     is_terminal = True
 
         self.reward_obs_term = [reward, self.get_state_features(self.current_state), is_terminal]
         if self.keep_history:

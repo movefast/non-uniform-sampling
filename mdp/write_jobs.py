@@ -22,7 +22,7 @@ def create_job(agent_type, hyper_params):
     count += 1
 
 
-def random_search(agent_type, param_grid, mb=master_bar(range(1)), max_evals=MAX_EVALS, num_runs=10):
+def random_search(agent_type, param_grid, mb=master_bar(range(1)), max_evals=MAX_EVALS):#, num_runs=10):
     """Random search for hyperparameter optimization"""
     
     # Keep searching until reach max evaluations
@@ -36,7 +36,7 @@ def random_search(agent_type, param_grid, mb=master_bar(range(1)), max_evals=MAX
             create_job(agent_type, hyper_params)
 
 
-def grid_search(agent_type, param_grid, num_runs=10):
+def grid_search(agent_type, param_grid):#, num_runs=10):
     """grid search for hyperparameter optimization"""
     param_keys, values = zip(*param_grid.items())
     
@@ -103,12 +103,14 @@ params_to_search = {
     "Meta_CER": {
         "meta_step_size": get_lr(b=1,a=10, n=5),
         "step_size": get_lr(n=8),
+        "online_opt": ["sgd", "adam"]
     },
     "Meta_PER": {
         "meta_step_size": get_lr(b=1,a=10, n=5),
         "step_size": get_lr(n=8),
         "buffer_alpha": get_lr(b=1.5,n=5), 
         "buffer_beta":get_lr(b=1,n=5), 
+        "online_opt": ["sgd", "adam"]
     },
 }
 
@@ -116,7 +118,9 @@ params_to_search = {
 if __name__ == "__main__":
     for agent_type in master_bar(list(agents.keys())):
         print(agent_type)
-        if agent_type in ('PER', 'GEO'):
+        if agent_type == 'Meta_PER':
+            random_search(agent_type, params_to_search[agent_type], max_evals=400)
+        elif agent_type in ('PER', 'GEO'):
             random_search(agent_type, params_to_search[agent_type])
         else:
             grid_search(agent_type, params_to_search[agent_type])

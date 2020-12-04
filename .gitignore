@@ -18,3 +18,4 @@ test.json
 
 # ignore jupyter notebook cache
 *.ipynb_checkpoints
+mdp/*.ipynb
