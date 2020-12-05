@@ -79,6 +79,7 @@ def get_lr(b=1e-2, a=2, n=5):
 params_to_search = {
     "Uniform": {
         "step_size": get_lr(n=8),
+        "num_meta_update": [1, 2, 5, 10],
     },
     "Sarsa_lambda": {
         "step_size": get_lr(1,n=8),
@@ -86,6 +87,7 @@ params_to_search = {
     },
     "CER": {
         "step_size": get_lr(n=8),
+        "num_meta_update": [1, 2, 5, 10],
     },
     "PER": {
         "step_size": get_lr(n=8),
@@ -93,24 +95,28 @@ params_to_search = {
         "buffer_beta":get_lr(b=1,n=5), 
 #         "buffer_alpha": [0.6, 0.7], 
 #         "buffer_beta":[0.4, 0.5, 0.6], 
+        "num_meta_update": [1, 2, 5, 10],
     },
     "GEO": {
         "step_size": get_lr(n=8),
         "buffer_alpha": get_lr(b=1.5,n=5), 
         "buffer_beta":get_lr(b=1,n=5), 
         "p": get_lr(1,n=7),
+        "num_meta_update": [1, 2, 5, 10],
     },
     "Meta_CER": {
         "meta_step_size": get_lr(b=1,a=10, n=5),
         "step_size": get_lr(n=8),
-        "online_opt": ["sgd", "adam"]
+        "online_opt": ["sgd", "adam"],
+        "num_meta_update": [1, 2, 5, 10],
     },
     "Meta_PER": {
         "meta_step_size": get_lr(b=1,a=10, n=5),
         "step_size": get_lr(n=8),
         "buffer_alpha": get_lr(b=1.5,n=5), 
         "buffer_beta":get_lr(b=1,n=5), 
-        "online_opt": ["sgd", "adam"]
+        "online_opt": ["sgd", "adam"],
+        "num_meta_update": [1, 2, 5, 10],
     },
 }
 
@@ -120,7 +126,7 @@ if __name__ == "__main__":
         print(agent_type)
         if agent_type == 'Meta_PER':
             random_search(agent_type, params_to_search[agent_type], max_evals=400)
-        elif agent_type in ('PER', 'GEO'):
+        elif agent_type in ('PER', 'GEO', "Meta_CER"):
             random_search(agent_type, params_to_search[agent_type])
         else:
             grid_search(agent_type, params_to_search[agent_type])
