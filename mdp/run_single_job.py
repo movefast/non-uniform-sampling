@@ -36,6 +36,7 @@ gamma = .99
 num_states = 100
 num_runs = 25
 num_episodes = 300
+exp_decay_explor = False
 
 
 nb_dir = os.path.split(os.getcwd())[0]
@@ -205,8 +206,10 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
             lst_of_msbpe = []
             lst_of_ve = []
             state_visits = np.zeros(env.cols * env.rows)
-            epsilon = 1
-#             epsilon = .1
+            if exp_decay_explor:
+                epsilon = 1
+            else:
+                epsilon = .1
             agent.per_power = 1
             for episode in range(num_episodes):
                 print(f"episode {episode}",end='\r')
@@ -221,7 +224,8 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
 #                   Runs an episode while keeping track of visited states and history
                     sum_of_rewards, msbpe, ve, history = run_episode(env, agent, state_visits, keep_history=True)
                     all_history.setdefault(env_name, {}).setdefault(algorithm, []).append(history)
-                epsilon *= 0.99
+                if exp_decay_explor:
+                    epsilon *= 0.99
                 reward_sums.append(sum_of_rewards)
                 lst_of_msbpe.append(msbpe)
                 lst_of_ve.append(ve)

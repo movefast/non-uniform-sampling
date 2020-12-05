@@ -47,6 +47,8 @@ class LinearAgent(agent.BaseAgent):
         self.epsilon = agent_init_info["epsilon"]
         self.step_size = agent_init_info["step_size"]
 
+        self.num_meta_update = agent_init_info["num_meta_update"]
+
         self.discount = agent_init_info["discount"]
         self.rand_generator = np.random.RandomState(agent_init_info["seed"])
 
@@ -148,37 +150,38 @@ class LinearAgent(agent.BaseAgent):
     def batch_train(self):
         self.updates += 1
         self.nn.train()
-        transitions = self.buffer.sample(self.batch_size - self.k)
-        transitions.extend(self.buffer.last_n(self.k))
-        batch = Transition(*zip(*transitions))
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.LongTensor(batch.action).view(-1, 1).to(device)
-        new_state_batch = torch.cat(batch.new_state)
-        new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
-        reward_batch = torch.FloatTensor(batch.reward).to(device)
-        discount_batch = torch.FloatTensor(batch.discount).to(device)
+        for _ in range(self.num_meta_update):
+            transitions = self.buffer.sample(self.batch_size - self.k)
+            transitions.extend(self.buffer.last_n(self.k))
+            batch = Transition(*zip(*transitions))
+            state_batch = torch.cat(batch.state)
+            action_batch = torch.LongTensor(batch.action).view(-1, 1).to(device)
+            new_state_batch = torch.cat(batch.new_state)
+            new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
+            reward_batch = torch.FloatTensor(batch.reward).to(device)
+            discount_batch = torch.FloatTensor(batch.discount).to(device)
 
-        current_q = self.nn(state_batch)
-        q_learning_action_values = current_q.gather(1, action_batch)
-        with torch.no_grad():
-            # ***
-            # new_q = self.target_nn(new_state_batch)
-            new_q = self.nn(new_state_batch)
-        # max_q = new_q.max(1)[0]
-        # max_q = new_q.mean(1)[0]
-        max_q = new_q.gather(1, new_action_batch).squeeze_()
-        target = reward_batch
-        target += discount_batch * max_q
-        target = target.view(-1, 1)
-        loss = criterion(q_learning_action_values, target)
+            current_q = self.nn(state_batch)
+            q_learning_action_values = current_q.gather(1, action_batch)
+            with torch.no_grad():
+                # ***
+                # new_q = self.target_nn(new_state_batch)
+                new_q = self.nn(new_state_batch)
+            # max_q = new_q.max(1)[0]
+            # max_q = new_q.mean(1)[0]
+            max_q = new_q.gather(1, new_action_batch).squeeze_()
+            target = reward_batch
+            target += discount_batch * max_q
+            target = target.view(-1, 1)
+            loss = criterion(q_learning_action_values, target)
 
-        self.optimizer.zero_grad()
-        loss.backward()
-        for param in self.nn.parameters():
-            param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
-        # if self.updates % 100 == 0:
-        #     self.update()
+            self.optimizer.zero_grad()
+            loss.backward()
+            for param in self.nn.parameters():
+                param.grad.data.clamp_(-1, 1)
+            self.optimizer.step()
+            # if self.updates % 100 == 0:
+            #     self.update()
 
     def update(self):
         # target network update

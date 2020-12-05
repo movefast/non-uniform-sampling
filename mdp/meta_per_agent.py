@@ -51,6 +51,8 @@ class LinearAgent(agent.BaseAgent):
         self.step_size = agent_init_info["step_size"]
         self.meta_step_size = agent_init_info["meta_step_size"]
 
+        self.num_meta_update = agent_init_info["num_meta_update"]
+
         self.discount = agent_init_info["discount"]
         self.rand_generator = np.random.RandomState(agent_init_info["seed"])
 
@@ -69,7 +71,7 @@ class LinearAgent(agent.BaseAgent):
         self.weights_init(self.nn)
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.update_target()
-        
+
         self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
         if self.online_opt == "sgd":
             self.online_optimizer = torch.optim.SGD(self.nn.parameters(), lr=self.step_size)
@@ -165,46 +167,47 @@ class LinearAgent(agent.BaseAgent):
     def batch_train(self):
         self.updates += 1
         self.nn.train()
-        transitions, idxs, is_weight = self.buffer.sample(self.batch_size)
-        batch = Transition(*zip(*transitions))
-        state_batch = torch.cat(batch.state)
-        action_batch = torch.LongTensor(batch.action).view(-1, 1).to(device)
-        new_state_batch = torch.cat(batch.new_state)
-        new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
-        reward_batch = torch.FloatTensor(batch.reward).to(device)
-        discount_batch = torch.FloatTensor(batch.discount).to(device)
-
-        current_q = self.nn(state_batch)
-        q_learning_action_values = current_q.gather(1, action_batch)
-        with torch.no_grad():
-            # ***
-            # new_q = self.target_nn(new_state_batch)
-            new_q = self.nn(new_state_batch)
-        # max_q = new_q.max(1)[0]
-        # max_q = new_q.mean(1)[0]
-        max_q = new_q.gather(1, new_action_batch).squeeze_()
-        target = reward_batch
-        target += discount_batch * max_q
-        target = target.view(-1, 1)
-
-        # 1) correct with is weight
-        if self.correction:
-            temp = F.mse_loss(q_learning_action_values, target,reduction='none')
-            loss = torch.Tensor(is_weight).to(device) @ temp
-        # 2) no is correction
-        else:
-            loss = criterion(q_learning_action_values, target)
-        errors = torch.abs((q_learning_action_values - target).squeeze_(dim=-1))
-        for i in range(self.batch_size):
-            self.buffer.update(idxs[i], np.power(errors[i].item(), self.per_power))
-
         weights_before = deepcopy(self.nn.state_dict())
 
-        self.optimizer.zero_grad()
-        loss.backward()
-        for param in self.nn.parameters():
-            param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
+        for _ in range(self.num_meta_update):
+            transitions, idxs, is_weight = self.buffer.sample(self.batch_size)
+            batch = Transition(*zip(*transitions))
+            state_batch = torch.cat(batch.state)
+            action_batch = torch.LongTensor(batch.action).view(-1, 1).to(device)
+            new_state_batch = torch.cat(batch.new_state)
+            new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
+            reward_batch = torch.FloatTensor(batch.reward).to(device)
+            discount_batch = torch.FloatTensor(batch.discount).to(device)
+
+            current_q = self.nn(state_batch)
+            q_learning_action_values = current_q.gather(1, action_batch)
+            with torch.no_grad():
+                # ***
+                # new_q = self.target_nn(new_state_batch)
+                new_q = self.nn(new_state_batch)
+            # max_q = new_q.max(1)[0]
+            # max_q = new_q.mean(1)[0]
+            max_q = new_q.gather(1, new_action_batch).squeeze_()
+            target = reward_batch
+            target += discount_batch * max_q
+            target = target.view(-1, 1)
+
+            # 1) correct with is weight
+            if self.correction:
+                temp = F.mse_loss(q_learning_action_values, target,reduction='none')
+                loss = torch.Tensor(is_weight).to(device) @ temp
+            # 2) no is correction
+            else:
+                loss = criterion(q_learning_action_values, target)
+            errors = torch.abs((q_learning_action_values - target).squeeze_(dim=-1))
+            for i in range(self.batch_size):
+                self.buffer.update(idxs[i], np.power(errors[i].item(), self.per_power))
+            
+            self.optimizer.zero_grad()
+            loss.backward()
+            for param in self.nn.parameters():
+                param.grad.data.clamp_(-1, 1)
+            self.optimizer.step()
 
         weights_after = self.nn.state_dict()
         self.nn.load_state_dict({name : weights_before[name] + ((weights_after[name] - weights_before[name]) * self.meta_step_size) for name in weights_before})
