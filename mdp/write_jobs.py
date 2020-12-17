@@ -51,21 +51,26 @@ def grid_search(agent_type, param_grid):#, num_runs=10):
 agents = {
     "Uniform": None,
     "PER": None,
+    "PER_wo_Recency_Bias": None,
+    "GNorm": None,
     "GEO": None,
     "CER": None,
 #     "Diverse": DivAgent,
     # "Sarsa": None,
-    "Sarsa_lambda": None,
-    "Meta_PER": None,
-    "Meta_CER": None,
+    "Sarsa_NN": None
+    # "Sarsa_lambda": None,
+    # "Meta_PER": None,
+    # "Meta_CER": None,
 }
 agent_infos = {
     "Uniform": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10},
     "CER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "k":1},
     # 'Diverse': {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "k":1},
-    "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":2e-4},
+    "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":2e-4, "recency_bias": True, "grad_norm": False},
+    "GNorm": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":2e-4, "recency_bias": True, "grad_norm": True},
     "GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":2e-4, "p":.1},
     # "Sarsa": {"step_size": .1, "buffer_size": 100, "batch_size": 1},
+    "Sarsa_NN": {"step_size": .1},
     "Sarsa_lambda": {"step_size": .1, "buffer_size": 100, "batch_size": 1, "lambda":.9},
 }
 # param_grid = dict(
@@ -79,45 +84,65 @@ def get_lr(b=1e-2, a=2, n=5):
 params_to_search = {
     "Uniform": {
         "step_size": get_lr(n=8),
-        "num_meta_update": [1, 2, 5, 10],
+        # "num_meta_update": [1, 2, 5, 10],
     },
-    "Sarsa_lambda": {
-        "step_size": get_lr(1,n=8),
-        "lambda":[0.99,0.98,0.96,0.9,0.84,0.68,0],
+    # "Sarsa_lambda": {
+    #     "step_size": get_lr(1,n=8),
+    #     "lambda":[0.99,0.98,0.96,0.9,0.84,0.68,0],
+    # },
+    "Sarsa_NN": {
+        "step_size": get_lr(n=8),
+        # "num_meta_update": [1, 2, 5, 10],
     },
     "CER": {
         "step_size": get_lr(n=8),
-        "num_meta_update": [1, 2, 5, 10],
+        # "num_meta_update": [1, 2, 5, 10],
     },
     "PER": {
         "step_size": get_lr(n=8),
         "buffer_alpha": get_lr(b=1.5,n=5), 
-        "buffer_beta":get_lr(b=1,n=5), 
+        "buffer_beta":get_lr(b=1,n=5),
 #         "buffer_alpha": [0.6, 0.7], 
 #         "buffer_beta":[0.4, 0.5, 0.6], 
-        "num_meta_update": [1, 2, 5, 10],
+        # "num_meta_update": [1, 2, 5, 10],
+    },
+    "PER_wo_Recency_Bias": {
+        "step_size": get_lr(n=8),
+        "buffer_alpha": get_lr(b=1.5,n=5), 
+        "buffer_beta":get_lr(b=1,n=5),
+#         "buffer_alpha": [0.6, 0.7], 
+#         "buffer_beta":[0.4, 0.5, 0.6], 
+        # "num_meta_update": [1, 2, 5, 10],
+    },
+    "GNorm": {
+        "step_size": get_lr(n=8),
+        "buffer_alpha": get_lr(b=1.5,n=5), 
+        "buffer_beta":get_lr(b=1,n=5),
+#         "buffer_alpha": [0.6, 0.7], 
+#         "buffer_beta":[0.4, 0.5, 0.6], 
+        # "num_meta_update": [1, 2, 5, 10],
     },
     "GEO": {
         "step_size": get_lr(n=8),
         "buffer_alpha": get_lr(b=1.5,n=5), 
         "buffer_beta":get_lr(b=1,n=5), 
         "p": get_lr(1,n=7),
-        "num_meta_update": [1, 2, 5, 10],
+        # "num_meta_update": [1, 2, 5, 10],
     },
-    "Meta_CER": {
-        "meta_step_size": get_lr(b=1,a=10, n=5),
-        "step_size": get_lr(n=8),
-        "online_opt": ["sgd", "adam"],
-        "num_meta_update": [1, 2, 5, 10],
-    },
-    "Meta_PER": {
-        "meta_step_size": get_lr(b=1,a=10, n=5),
-        "step_size": get_lr(n=8),
-        "buffer_alpha": get_lr(b=1.5,n=5), 
-        "buffer_beta":get_lr(b=1,n=5), 
-        "online_opt": ["sgd", "adam"],
-        "num_meta_update": [1, 2, 5, 10],
-    },
+    # "Meta_CER": {
+    #     "meta_step_size": get_lr(b=1,a=10, n=5),
+    #     "step_size": get_lr(n=8),
+    #     "online_opt": ["sgd", "adam"],
+    #     "num_meta_update": [1, 2, 5, 10],
+    # },
+    # "Meta_PER": {
+    #     "meta_step_size": get_lr(b=1,a=10, n=5),
+    #     "step_size": get_lr(n=8),
+    #     "buffer_alpha": get_lr(b=1.5,n=5), 
+    #     "buffer_beta":get_lr(b=1,n=5), 
+    #     "online_opt": ["sgd", "adam"],
+    #     "num_meta_update": [1, 2, 5, 10],
+    # },
 }
 
 
@@ -126,7 +151,8 @@ if __name__ == "__main__":
         print(agent_type)
         if agent_type == 'Meta_PER':
             random_search(agent_type, params_to_search[agent_type], max_evals=400)
-        elif agent_type in ('PER', 'GEO', "Meta_CER"):
+        # elif agent_type in ('PER', 'GEO', "Meta_CER"):
+        elif agent_type in ('GEO', "Meta_CER"):
             random_search(agent_type, params_to_search[agent_type])
         else:
             grid_search(agent_type, params_to_search[agent_type])

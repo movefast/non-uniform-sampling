@@ -69,6 +69,8 @@ class LinearAgent(agent.BaseAgent):
         self.tau = 0.5
         self.updates = 0
 
+        self.sampled_state = np.zeros(self.num_states)
+
     def weights_init(self, m):
         classname = m.__class__.__name__
         if classname.find('Linear') != -1:
@@ -163,6 +165,8 @@ class LinearAgent(agent.BaseAgent):
             new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
             reward_batch = torch.FloatTensor(batch.reward).to(device)
             discount_batch = torch.FloatTensor(batch.discount).to(device)
+
+            self.sampled_state += state_batch.sum(0).detach().cpu().numpy()
 
             current_q = self.nn(state_batch)
             q_learning_action_values = current_q.gather(1, action_batch)

@@ -1,9 +1,9 @@
 import agent
-import autograd_hacks
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from mdp import autograd_hacks
 from mdp.prioritized_memory import Memory
 from mdp.replay_buffer import Transition
 

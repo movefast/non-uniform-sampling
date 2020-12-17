@@ -17,19 +17,20 @@ from matplotlib import animation
 from matplotlib import pyplot as plt
 from tqdm import tqdm
 
-from mdp.cer_agent import LinearAgent as CERAgent
+from mdp.agents.cer_agent import LinearAgent as CERAgent
+from mdp.agents.geo_agent import LinearAgent as GEOAgent
+from mdp.agents.nn_agent import LinearAgent as NNAgent
+from mdp.agents.per_agent import LinearAgent as PERAgent
+from mdp.agents.sarsa_agent import LinearAgent as SarsaNNAgent
+from mdp.archive.sarsa_agent import QLearningAgent as SarsaAgent
 # from mdp.diversity_agent import LinearAgent as DivAgent
 from mdp.env import policies
 from mdp.env.errors import *
 from mdp.env.policies import Policy
 from mdp.env.random_walk import RandomWalk
-from mdp.geo_agent import LinearAgent as GEOAgent
 from mdp.mdp_env import MazeEnvironment
 from mdp.meta_cer_agent import LinearAgent as MCERAgent
 from mdp.meta_per_agent import LinearAgent as MPERAgent
-from mdp.nn_agent import LinearAgent as NNAgent
-from mdp.per_agent import LinearAgent as PERAgent
-from mdp.sarsa_agent import QLearningAgent as SarsaAgent
 from mdp.sarsa_lambda import QLearningAgent as SarsaLAgent
 
 gamma = .99
@@ -54,7 +55,11 @@ def get_pred_error(agent, epsilon_greedy=False):
     if type(agent) is SarsaAgent or type(agent) is SarsaLAgent:
         action_values = torch.from_numpy(agent.q[1:]).float()
     else:
-        action_values = agent.nn.i2o.weight.t()[1:]
+        # 1 linear agent
+        # action_values = agent.nn.i2o.weight.t()[1:]
+        # 2) nn agent
+        state_features = np.eye(num_states+2).astype("float32")
+        action_values = agent.nn(torch.from_numpy(state_features))[1:]
     state_action_pol = F.softmax(action_values, dim=1)
     if not epsilon_greedy:
         policy = policies.fromActionArray([.5,.5])
@@ -111,8 +116,14 @@ def run_episode(env, agent, state_visits=None, keep_history=False):
         predictions = agent.q.max(axis=1)[1:-1] * (1 - agent.epsilon) \
             + agent.epsilon * agent.q.min(axis=1)[1:-1]
     else:
-        predictions = agent.nn.i2o.weight.t().max(1)[0][1:-1].detach().numpy() * (1 - agent.epsilon) \
-            + agent.epsilon * agent.nn.i2o.weight.t().mean(dim=1)[1:-1].detach().numpy()
+        # 1) linear agent
+        # predictions = agent.nn.i2o.weight.t().max(1)[0][1:-1].detach().numpy() * (1 - agent.epsilon) \
+        #     + agent.epsilon * agent.nn.i2o.weight.t().mean(dim=1)[1:-1].detach().numpy()
+        # 2) nn agent
+        state_features = np.eye(num_states+2).astype("float32")
+        action_values = agent.nn(torch.from_numpy(state_features))
+        predictions = action_values.max(1)[0][1:-1].detach().numpy() * (1 - agent.epsilon) \
+            + agent.epsilon * action_values.mean(dim=1)[1:-1].detach().numpy()
 
     msbpe, d = get_pred_error(agent, epsilon_greedy=True)
     ve = np.sum(np.array(d[:-1]) * (predictions-targets)**2)
@@ -143,28 +154,34 @@ env_infos = {
 agents = {
     "Uniform": NNAgent,
     "PER": PERAgent,
+    "PER_wo_Recency_Bias": PERAgent,
+    "GNorm": PERAgent,
     "GEO": GEOAgent,
     "CER": CERAgent,
     "Sarsa": SarsaAgent,
+    "Sarsa_NN": SarsaNNAgent,
     "Sarsa_lambda": SarsaLAgent,
     "Meta_PER": MPERAgent,
     "Meta_CER": MCERAgent,
 }
 agent_infos = {
     # "Sarsa": {"step_size": .1, "buffer_size": 100, "batch_size": 1},
+    "Sarsa_NN": {"step_size": .1, "num_meta_update":1},
     "Sarsa_lambda": {"step_size": .1, "buffer_size": 100, "batch_size": 1, "lambda":.9},
-    "Uniform": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10},
-    "CER": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "k":1},
-    "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4},
-    "GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":.00003, "p":.1},
-    "Meta_PER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4},
-    "Meta_CER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "k":1},
+    "Uniform": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "num_meta_update":1},
+    "CER": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "k":1, "num_meta_update":1},
+    "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1},
+    "GNorm": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": True, "num_meta_update":1},
+    "PER_wo_Recency_Bias": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": False, "grad_norm": False, "num_meta_update":1},
+    "GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "p":.1, "num_meta_update":1},
+    "Meta_PER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "num_meta_update":1},
+    "Meta_CER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "k":1, "num_meta_update":1},
 }
 
 
 all_state_visits = {} # Contains state visit counts during the last 10 episodes
 all_history = {}
-metrics = {"msbpe":{},"ve":{}, "all_reward_sums": {}, "hyper_params": {}}
+metrics = {"msbpe":{},"ve":{}, "all_reward_sums": {}, "hyper_params": {}, "states": {}}
 
 
 def objective(agent_type, hyper_params, num_runs=num_runs):
@@ -205,6 +222,7 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
             reward_sums = []
             lst_of_msbpe = []
             lst_of_ve = []
+            lst_of_sampled_states = []
             state_visits = np.zeros(env.cols * env.rows)
             if exp_decay_explor:
                 epsilon = 1
@@ -229,11 +247,14 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
                 reward_sums.append(sum_of_rewards)
                 lst_of_msbpe.append(msbpe)
                 lst_of_ve.append(ve)
+                lst_of_sampled_states.append(agent.sampled_state.tolist())
+                agent.sampled_state = np.zeros(env.cols * env.rows)
 
             metrics["all_reward_sums"][env_name].setdefault(algorithm, []).append(reward_sums)
             all_state_visits[env_name].setdefault(algorithm, []).append(state_visits)
             metrics["msbpe"][env_name].setdefault(algorithm, []).append(lst_of_msbpe)
             metrics["ve"][env_name].setdefault(algorithm, []).append(lst_of_ve)
+            metrics["states"][env_name].setdefault(algorithm, []).append(lst_of_sampled_states)
 
     end = time.time()
     print(end - start)
