@@ -99,3 +99,25 @@ class SumTree:
             last_idxs.append(-1 if dataIdx == 0 else dataIdx - 2 + self.capacity)
             dataIdx -= 1
         return results, idxs, np.ones([seq_len]),  last_idxs
+
+    def last_n_idxes(self, seq_len):
+        assert self.n_entries >= seq_len, "we don't have long enough trajectory to sample from"
+        dataIdx = self.write -1
+        idxs = []
+        for _ in range(seq_len):
+            if dataIdx < 0:
+                dataIdx = self.capacity - 1
+            idx = dataIdx + self.capacity - 1
+            idxs.append(idx)
+            dataIdx -= 1
+        return idxs
+
+    def multiply_update(self, idx, multiplier):
+        # TODO comment out visit discount logic
+        self.visits[idx] += 1
+        # p /= np.sqrt(self.visits[idx])
+        p = self.tree[idx] * multiplier
+        change = p - self.tree[idx]
+
+        self.tree[idx] = p
+        self._propagate(idx, change)

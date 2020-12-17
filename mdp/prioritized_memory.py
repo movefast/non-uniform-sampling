@@ -53,6 +53,18 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             idxs.append(idx)
 
         sampling_probabilities = priorities / self.tree.total()
+
+        # recency biased correction
+        # data_idx = [idx - self.capacity + 1 for idx in idxs] 
+        # if self.num_ele < self.capacity:
+        #     weights = self.geo_weights[-self.num_ele:]
+        #     weights_sum = self.geo_weights[-self.num_ele:].sum()
+        # else:
+        #     weights = self.geo_weights
+        #     weights_sum = self.weights_sum
+        # geo_sampling_probabilities = weights[np.array(data_idx)] / weights_sum
+        # is_weight = np.power(geo_sampling_probabilities / sampling_probabilities, self.beta)
+
         is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
         is_weight /= is_weight.max()
 
@@ -89,3 +101,10 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
     def __len__(self):
         return self.tree.n_entries
+
+    # per_agent_trace
+    def last_n_idxes(self, seq_len):
+        return self.tree.last_n_idxes(seq_len)
+
+    def multiply_update(self, idx, multiplier):
+        self.tree.multiply_update(idx, multiplier)
