@@ -77,6 +77,8 @@ class LinearAgent(agent.BaseAgent):
             self.online_optimizer = torch.optim.SGD(self.nn.parameters(), lr=self.step_size)
         elif self.online_opt == "adam":
             self.online_optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
+        elif self.online_opt == "meta":
+            self.online_optimizer = self.optimizer
         else:
             raise NotImplementedError("you chose an optimizer other than sgd and adam")
         self.buffer = Memory(self.buffer_size, self.buffer_alpha, self.buffer_beta, self.beta_increment)
