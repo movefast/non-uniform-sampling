@@ -3,7 +3,6 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
 from mdp.geo_replay_buffer import ReplayMemory
 from mdp.replay_buffer import Transition
 
@@ -15,15 +14,19 @@ class SimpleNN(nn.Module):
     def __init__(self, input_size, output_size):
         super(SimpleNN, self).__init__()
         self.tanh = nn.ReLU()
-        # self.i2h = nn.Linear(input_size, input_size//2+1, bias=False)
-        # self.h2o = nn.Linear(input_size//2+1, output_size, bias=False)
-        self.i2o = nn.Linear(input_size, output_size, bias=False)
+        # 2-layer nn
+        self.i2h = nn.Linear(input_size, input_size//2+1, bias=False)
+        self.h2o = nn.Linear(input_size//2+1, output_size, bias=False)
+        # linear
+        # self.i2o = nn.Linear(input_size, output_size, bias=False)
 
     def forward(self, x):
-        # x = self.i2h(x)
-        # x = self.tanh(x)
-        # x = self.h2o(x)
-        x = self.i2o(x)
+        # 2-layer nn
+        x = self.i2h(x)
+        x = self.tanh(x)
+        x = self.h2o(x)
+        # linear
+        # x = self.i2o(x)
         return x
 
 
