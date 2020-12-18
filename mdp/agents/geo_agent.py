@@ -177,8 +177,8 @@ class LinearAgent(agent.BaseAgent):
             q_learning_action_values = current_q.gather(1, action_batch)
             with torch.no_grad():
                 # ***
-                # new_q = self.target_nn(new_state_batch)
-                new_q = self.nn(new_state_batch)
+                new_q = self.target_nn(new_state_batch)
+                # new_q = self.nn(new_state_batch)
             # max_q = new_q.max(1)[0]
             # max_q = new_q.mean(1)[0]
             max_q = new_q.gather(1, new_action_batch).squeeze_()
@@ -202,8 +202,8 @@ class LinearAgent(agent.BaseAgent):
             for param in self.nn.parameters():
                 param.grad.data.clamp_(-1, 1)
             self.optimizer.step()
-            # if self.updates % 100 == 0:
-            #     self.update()
+            if self.updates % 10 == 0:
+                self.update()
 
     def update(self):
         # target network update
