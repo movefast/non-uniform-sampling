@@ -53,6 +53,8 @@ def dict_merge(dct, merge_dct):
     for k, v in merge_dct.items():
         if (k in dct and isinstance(dct[k], dict)
                 and isinstance(merge_dct[k], collections.Mapping)):
+            if k == "states":
+                continue
             dict_merge(dct[k], merge_dct[k])
         elif k in dct and isinstance(dct[k], list) and isinstance(v, list):
             print('hehehe')
@@ -93,7 +95,7 @@ def plot_param_search():
 
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
-                ax = fig.add_subplot(3, 2, i+1)
+                ax = fig.add_subplot(4, 2, i+1)
                 agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
                 metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
                 sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
