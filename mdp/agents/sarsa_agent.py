@@ -14,18 +14,18 @@ class SimpleNN(nn.Module):
         super(SimpleNN, self).__init__()
         self.tanh = nn.ReLU()
         # 2-layer nn
-        # self.i2h = nn.Linear(input_size, input_size//2+1, bias=False)
-        # self.h2o = nn.Linear(input_size//2+1, output_size, bias=False)
+        self.i2h = nn.Linear(input_size, input_size//2+1, bias=False)
+        self.h2o = nn.Linear(input_size//2+1, output_size, bias=False)
         # linear
-        self.i2o = nn.Linear(input_size, output_size, bias=False)
+        # self.i2o = nn.Linear(input_size, output_size, bias=False)
 
     def forward(self, x):
         # 2-layer nn
-        # x = self.i2h(x)
-        # x = self.tanh(x)
-        # x = self.h2o(x)
+        x = self.i2h(x)
+        x = self.tanh(x)
+        x = self.h2o(x)
         # linear
-        x = self.i2o(x)
+        # x = self.i2o(x)
         return x
 
 
