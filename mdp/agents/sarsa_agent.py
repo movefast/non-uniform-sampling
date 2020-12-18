@@ -173,7 +173,7 @@ class LinearAgent(agent.BaseAgent):
         for param in self.nn.parameters():
             param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-        if self.updates % 100 == 0:
+        if self.updates % 10 == 0:
             self.update()
 
     def update(self):
