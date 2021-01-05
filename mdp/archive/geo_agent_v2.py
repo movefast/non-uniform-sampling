@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mdp.replay_buffer import ReplayMemory, Transition
+from mdp.buffer.geo_replay_buffer_v2 import ReplayMemory
+from mdp.replay_buffer import Transition
 
 criterion = torch.nn.MSELoss()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -23,7 +24,6 @@ class SimpleNN(nn.Module):
         # x = self.h2o(x)
         x = self.i2o(x)
         return x
-
 
 class LinearAgent(agent.BaseAgent):
     def agent_init(self, agent_init_info):
@@ -54,14 +54,20 @@ class LinearAgent(agent.BaseAgent):
         self.batch_size      = agent_init_info.get("batch_size", 10)
         self.buffer_size     = agent_init_info.get("buffer_size", 1000)
 
-        self.k      = agent_init_info.get("k", 1)
+        self.buffer_alpha = agent_init_info["buffer_alpha"]
+        self.buffer_beta = agent_init_info["buffer_beta"]
+        self.beta_increment = agent_init_info.get("beta_increment", 0.001)
+
+        self.correction = agent_init_info["correction"]
+        self.discor_correction = agent_init_info["discor_correction"] 
+        self.discor_tau = agent_init_info["discor_tau"]
 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.update_target()
         self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
-        self.buffer = ReplayMemory(self.buffer_size)
+        self.buffer = ReplayMemory(self.buffer_size, self.buffer_alpha, self.buffer_beta, self.beta_increment)
         self.tau = 0.5
         self.updates = 0
 
@@ -126,8 +132,9 @@ class LinearAgent(agent.BaseAgent):
         else:
             action = self.argmax(current_q)
 
-        self.buffer.push(self.prev_state, self.prev_action, state, action, reward, self.discount)
-        
+        self.buffer.add(self.prev_state, self.prev_action, state, action, reward, self.discount)
+        self.buffer.geo_weights[:-1] = self.buffer.geo_weights[1:]
+        self.buffer.geo_weights[-1] = 1
         self.prev_action_value = current_q[action]
         self.prev_state = state
         self.prev_action = action
@@ -144,7 +151,9 @@ class LinearAgent(agent.BaseAgent):
         """
         state = self.get_state_feature(state)
         if append_buffer:
-            self.buffer.push(self.prev_state, self.prev_action, state, 0, reward, 0)
+            self.buffer.add(self.prev_state, self.prev_action, state, 0, reward, 0)
+            self.buffer.geo_weights[:-1] = self.buffer.geo_weights[1:]
+            self.buffer.geo_weights[-1] = 1
         if len(self.buffer) > self.batch_size:
             self.batch_train()
 
@@ -152,8 +161,7 @@ class LinearAgent(agent.BaseAgent):
         self.updates += 1
         self.nn.train()
         for _ in range(self.num_meta_update):
-            transitions = self.buffer.sample(self.batch_size - self.k)
-            transitions.extend(self.buffer.last_n(self.k))
+            transitions, idxs, is_weight = self.buffer.sample_geo(self.batch_size)
             batch = Transition(*zip(*transitions))
             state_batch = torch.cat(batch.state)
             action_batch = torch.LongTensor(batch.action).view(-1, 1).to(device)
@@ -163,28 +171,48 @@ class LinearAgent(agent.BaseAgent):
             discount_batch = torch.FloatTensor(batch.discount).to(device)
 
             self.sampled_state += state_batch.sum(0).detach().cpu().numpy()
-            
+
             current_q = self.nn(state_batch)
             q_learning_action_values = current_q.gather(1, action_batch)
             with torch.no_grad():
                 # ***
-                # new_q = self.target_nn(new_state_batch)
-                new_q = self.nn(new_state_batch)
+                new_q = self.target_nn(new_state_batch)
+                # new_q = self.nn(new_state_batch)
             # max_q = new_q.max(1)[0]
             # max_q = new_q.mean(1)[0]
             max_q = new_q.gather(1, new_action_batch).squeeze_()
             target = reward_batch
             target += discount_batch * max_q
             target = target.view(-1, 1)
-            loss = criterion(q_learning_action_values, target)
+            # 1) correct with is weight
+            if self.correction:
+                # integrate discor_weights into is_weight
+                if self.discor_correction:
+                    discor_weights = np.exp(-self.buffer.loss_weights[idxs] * self.discount / self.discor_tau) 
+                    is_weight *= discor_weights
+                temp = F.mse_loss(q_learning_action_values, target,reduction='none')
+                loss = torch.Tensor(is_weight).to(device) @ temp
+            # 2) no is correction
+            else:
+                loss = criterion(q_learning_action_values, target)
+            errors = torch.abs((q_learning_action_values - target).squeeze_(dim=-1))
+            # for i in range(self.batch_size):
+            #     self.buffer.update(idxs[i], np.power(errors[i].item(), self.per_power))
+
+            # update loss weights for Discor correction
+            self.buffer.loss_weights[idxs] *= self.discount
+            self.buffer.loss_weights[idxs] += errors.detach().cpu().numpy() 
 
             self.optimizer.zero_grad()
             loss.backward()
             for param in self.nn.parameters():
                 param.grad.data.clamp_(-1, 1)
             self.optimizer.step()
-            # if self.updates % 100 == 0:
-            #     self.update()
+            with torch.no_grad():
+                # self.buffer.geo_weights *= 2 * F.sigmoid(-errors.mean()).item()
+                self.buffer.geo_weights *= torch.exp(-errors.mean()).item()
+            if self.updates % 10 == 0:
+                self.update()
 
     def update(self):
         # target network update

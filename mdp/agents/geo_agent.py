@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mdp.geo_replay_buffer import ReplayMemory
+from mdp.buffer.geo_replay_buffer import ReplayMemory
 from mdp.replay_buffer import Transition
 
 criterion = torch.nn.MSELoss()
