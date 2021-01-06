@@ -2,19 +2,10 @@ import itertools
 import random
 from collections import deque, namedtuple
 from dataclasses import dataclass
-from enum import IntEnum
 from typing import Any
 
 import numpy as np
 import torch
-
-
-class Strat(IntEnum):
-    TWO_EXP = 1
-    ONE_EXP = 2
-    DISCOR = 3
-    GEO = 4
-
 
 Trans = namedtuple('Transition', ('state', 'action', 'new_state', 'new_action', 'reward', 'discount'))
 
@@ -42,22 +33,16 @@ class sliceable_deque(deque):
 class ReplayMemory(object):
 
     # alpha is the placeholder so that geoagent doesnt have to change a lot
-    def __init__(self, capacity, alpha=None, beta=None, beta_increment=None, weighting_strat=Strat.GEO, lam=2, tau_1=5, tau_2=1, min_weight=1e-1):
+    def __init__(self, capacity, alpha=None, beta=None, beta_increment=None):
         self.capacity = capacity
         self.memory = sliceable_deque([])
         self.position = 0
-        self.geo_weights = np.array([0]*self.capacity).astype('float')
+        self.geo_weights = np.array([1]*self.capacity).astype('float')
         self.loss_weights = np.array([0]*self.capacity).astype('float')
         
         self.num_ele = 0
         self.beta = beta or 0.4
         self.beta_increment_per_sampling = beta_increment or 0.001
-
-        self.weighting_strat = weighting_strat
-        self.lam = lam
-        self.tau_1 = tau_1
-        self.tau_2 = tau_2
-        self.min_weight = min_weight
 
     def add(self, *args):
         """Saves a transition."""
@@ -67,10 +52,10 @@ class ReplayMemory(object):
             self.loss_weights[:-1] = self.loss_weights[1:]
             self.loss_weights[-1] = 0
             self.geo_weights[:-1] = self.geo_weights[1:]
-            self.geo_weights[-1] = 0
+            self.geo_weights[-1] = 1
         else:
             self.loss_weights[len(self.memory)] = 0
-            self.geo_weights[len(self.memory)] = 0 
+            self.geo_weights[len(self.memory)] = 1
         self.memory.append(Transition(*args))
         if self.num_ele < self.capacity:
             self.num_ele += 1
@@ -106,40 +91,16 @@ class ReplayMemory(object):
         # \beta^(t-s) / (\sum_{k=1}^t \beta^{t-k}) 
     def sample_geo(self, n):
         self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
-        # old geo strat
-        # if self.num_ele < self.capacity:
-        #     weights = self.geo_weights[-self.num_ele:]
-        # else:
-        #     weights = self.geo_weights
-        # # added min value for weights
-        # weights = np.clip(weights, 1e-3,None) 
-        # # TODO if add cer we need to think about how to adjust this
-        # weights_sum = self.geo_weights[-self.num_ele:].sum()
-
-        if self.weighting_strat == Strat.TWO_EXP:
-            weights = (np.exp(-self.geo_weights/self.tau_1)+ self.lam * np.exp(-self.loss_weights/self.tau_2))/ (1 + self.lam)
-        elif self.weighting_strat == Strat.ONE_EXP:
-            weights = np.exp(-(self.geo_weights + self.lam * self.loss_weights)/self.tau_1)
-        elif self.weighting_strat == Strat.DISCOR:
-            weights = np.exp(-self.loss_weights/self.tau_1)
-        elif self.weighting_strat == Strat.GEO:
-            weights = np.exp(-self.geo_weights/self.tau_1) 
-        else:
-            raise NotImplementedError
-        
-        # other weighting strats I've tried
-        # weights = np.exp(-(self.geo_weights + 5 * self.loss_weights)/5)
-        # weights = np.exp(-(self.geo_weights/np.max(self.geo_weights)))
-        # weights = (np.exp(-self.geo_weights/5)+ .2 * np.exp(-self.loss_weights))/1.2
-        # weights = np.exp(-(self.geo_weights/(np.max(self.geo_weights) + 1e-3) + 1 * self.loss_weights/(np.max(self.loss_weights) + 1e-3)))
-
-        weights = np.clip(weights, self.min_weight, None) 
-        # default uniform
-        # weights = np.ones(self.num_ele)
+        # np.exp(-self.loss_weights * .9)
         if self.num_ele < self.capacity:
-            weights = weights[-self.num_ele:]
+            weights = self.geo_weights[-self.num_ele:]
+        else:
+            weights = self.geo_weights
+        # added min value for weights
+        weights = np.clip(weights, 1e-3,None) 
         # TODO if add cer we need to think about how to adjust this
-        weights_sum = weights[-self.num_ele:].sum()
+        weights_sum = self.geo_weights[-self.num_ele:].sum()
+        # import pdb; pdb.set_trace()
         idxes = torch.multinomial(torch.from_numpy(weights).float(), n, replacement=False)
         # idxes = torch.multinomial(torch.from_numpy(weights).float(), n, replacement=True)
         batch = [self.memory[idx] for idx in idxes]

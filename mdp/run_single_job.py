@@ -19,6 +19,7 @@ from tqdm import tqdm
 
 from mdp.agents.cer_agent import LinearAgent as CERAgent
 from mdp.agents.geo_agent import LinearAgent as GEOAgent
+from mdp.agents.geo_agent_v2 import LinearAgent as GEOAgentV2
 from mdp.agents.nn_agent import LinearAgent as NNAgent
 from mdp.agents.per_agent import LinearAgent as PERAgent
 from mdp.agents.sarsa_agent import LinearAgent as SarsaNNAgent
@@ -37,7 +38,7 @@ gamma = .99
 num_states = 100
 num_runs = 25
 num_episodes = 300
-exp_decay_explor = False
+exp_decay_explor = True 
 
 
 nb_dir = os.path.split(os.getcwd())[0]
@@ -157,6 +158,10 @@ agents = {
     "PER_wo_Recency_Bias": PERAgent,
     "GNorm": PERAgent,
     "GEO": GEOAgent,
+    "GEO_V2": GEOAgent,
+    "GEO_V2_2": GEOAgentV2,
+    "GEO_V2_3": GEOAgentV2,
+    "GEO_V2_4": GEOAgentV2,
     "CER": CERAgent,
     "Sarsa": SarsaAgent,
     "Sarsa_NN": SarsaNNAgent,
@@ -174,6 +179,10 @@ agent_infos = {
     "GNorm": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": True, "num_meta_update":1},
     "PER_wo_Recency_Bias": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": False, "grad_norm": False, "num_meta_update":1},
     "GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "p":.1, "num_meta_update":1},
+    "GEO_V2": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_beta":0.4, "beta_increment":1e-4, "num_meta_update":1, "weighting_strat":1, "lam":.5, "tau_1":1, "tau_2":1, "min_weight":1e-1},
+    "GEO_V2_2": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_beta":0.4, "beta_increment":1e-4, "num_meta_update":1, "weighting_strat":2, "lam":5, "tau_1":5, "min_weight":1e-1},
+    "GEO_V2_3": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_beta":0.4, "beta_increment":1e-4, "num_meta_update":1, "weighting_strat":3, "tau_1":1, "min_weight":1e-1},
+    "GEO_V2_4": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_beta":0.4, "beta_increment":1e-4, "num_meta_update":1, "weighting_strat":4, "tau_1":1, "min_weight":1e-1},
     "Meta_PER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "num_meta_update":1},
     "Meta_CER": {"step_size": 1e-2, "meta_step_size": 1e-1, "buffer_size": 1000, "batch_size": 10, "k":1, "num_meta_update":1},
 }

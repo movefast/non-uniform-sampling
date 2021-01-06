@@ -59,20 +59,23 @@ class LinearAgent(agent.BaseAgent):
         self.batch_size      = agent_init_info.get("batch_size", 10)
         self.buffer_size     = agent_init_info.get("buffer_size", 1000)
 
-        self.buffer_alpha = agent_init_info["buffer_alpha"]
+        self.buffer_alpha = agent_init_info.get("buffer_alpha", None)
         self.buffer_beta = agent_init_info["buffer_beta"]
         self.beta_increment = agent_init_info.get("beta_increment", 0.001)
 
         self.correction = agent_init_info["correction"]
-        self.discor_correction = agent_init_info["discor_correction"] 
-        self.discor_tau = agent_init_info["discor_tau"]
+        self.tau_1 = agent_init_info["tau_1"]
+        self.tau_2 = agent_init_info.get("tau_2", None)
+        self.lam = agent_init_info.get("lam", None)
+        self.min_weight = agent_init_info["min_weight"]
 
+        self.weighting_strat = agent_init_info["weighting_strat"] 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.update_target()
         self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
-        self.buffer = ReplayMemory(self.buffer_size, self.buffer_alpha, self.buffer_beta, self.beta_increment)
+        self.buffer = ReplayMemory(self.buffer_size, self.buffer_alpha, self.buffer_beta, self.beta_increment, self.weighting_strat, self.lam, self.tau_1, self.tau_2, self.min_weight)
         self.tau = 0.5
         self.updates = 0
 
@@ -138,8 +141,6 @@ class LinearAgent(agent.BaseAgent):
             action = self.argmax(current_q)
 
         self.buffer.add(self.prev_state, self.prev_action, state, action, reward, self.discount)
-        self.buffer.geo_weights[:-1] = self.buffer.geo_weights[1:]
-        self.buffer.geo_weights[-1] = 1
         self.prev_action_value = current_q[action]
         self.prev_state = state
         self.prev_action = action
@@ -157,8 +158,6 @@ class LinearAgent(agent.BaseAgent):
         state = self.get_state_feature(state)
         if append_buffer:
             self.buffer.add(self.prev_state, self.prev_action, state, 0, reward, 0)
-            self.buffer.geo_weights[:-1] = self.buffer.geo_weights[1:]
-            self.buffer.geo_weights[-1] = 1
         if len(self.buffer) > self.batch_size:
             self.batch_train()
 
@@ -181,8 +180,8 @@ class LinearAgent(agent.BaseAgent):
             q_learning_action_values = current_q.gather(1, action_batch)
             with torch.no_grad():
                 # ***
-                new_q = self.target_nn(new_state_batch)
-                # new_q = self.nn(new_state_batch)
+                # new_q = self.target_nn(new_state_batch)
+                new_q = self.nn(new_state_batch)
             # max_q = new_q.max(1)[0]
             # max_q = new_q.mean(1)[0]
             max_q = new_q.gather(1, new_action_batch).squeeze_()
@@ -192,9 +191,9 @@ class LinearAgent(agent.BaseAgent):
             # 1) correct with is weight
             if self.correction:
                 # integrate discor_weights into is_weight
-                if self.discor_correction:
-                    discor_weights = np.exp(-self.buffer.loss_weights[idxs] * self.discount / self.discor_tau) 
-                    is_weight *= discor_weights
+                # if self.discor_correction:
+                #     discor_weights = np.exp(-self.buffer.loss_weights[idxs] * self.discount / self.discor_tau) 
+                #     is_weight *= discor_weights
                 temp = F.mse_loss(q_learning_action_values, target,reduction='none')
                 loss = torch.Tensor(is_weight).to(device) @ temp
             # 2) no is correction
@@ -205,8 +204,11 @@ class LinearAgent(agent.BaseAgent):
             #     self.buffer.update(idxs[i], np.power(errors[i].item(), self.per_power))
 
             # update loss weights for Discor correction
-            self.buffer.loss_weights[idxs] *= self.discount
-            self.buffer.loss_weights[idxs] += errors.detach().cpu().numpy() 
+            nonzero_idxes = idxs != 0
+            t_1_idxs = idxs-1
+            self.buffer.loss_weights[idxs[nonzero_idxes]] = errors[nonzero_idxes].detach().cpu().numpy() + discount_batch.numpy()[nonzero_idxes] * self.buffer.loss_weights[t_1_idxs[nonzero_idxes]]
+            # self.buffer.loss_weights[idxs] *= self.discount
+            # self.buffer.loss_weights[idxs] += errors.detach().cpu().numpy() 
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -214,9 +216,11 @@ class LinearAgent(agent.BaseAgent):
                 param.grad.data.clamp_(-1, 1)
             self.optimizer.step()
             with torch.no_grad():
-                self.buffer.geo_weights *= 2 * F.sigmoid(-errors.mean()).item()
-            if self.updates % 10 == 0:
-                self.update()
+                # self.buffer.geo_weights *= 2 * F.sigmoid(-errors.mean()).item()
+                # self.buffer.geo_weights *= torch.exp(-errors.mean()).item()
+                self.buffer.geo_weights += errors.mean().item()
+            # if self.updates % 10 == 0:
+            #     self.update()
 
     def update(self):
         # target network update
