@@ -38,7 +38,7 @@ def combine_results(file_name):
     # 1) torch.save
     # torch.save(metrics, ROOT_DIR/f'metrics_{today}_{file_name}.torch')
     # 2) joblib.dump for large files
-    from sklearn import joblib
+    import joblib
     joblib.dump(metrics, ROOT_DIR/f'metrics_{today}_{file_name}.torch')
 
 if __name__ == '__main__':
