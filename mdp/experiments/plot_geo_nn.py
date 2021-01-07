@@ -8,8 +8,6 @@ import torch
 from configs import ROOT_DIR
 from matplotlib import pyplot as plt
 
-metrics = {"msbpe":{},"ve":{}, "all_reward_sums": {}, "hyper_params": {}}
-
 # results = pd.DataFrame(columns = ['agent', 'score', 'params'],
 #                                   index = list(range(MAX_EVALS)))
 
@@ -130,7 +128,8 @@ def get_metric_stats(env, metric_name, algorithm):
 import math
 
 
-def plot_parameter_sensitivity():
+def plot_parameter_sensitivity(file_name):
+    metrics = torch.load(ROOT_DIR/f'metrics_{today}_{file_name}.torch')
     env = 'MDP'
     fig = plt.figure(figsize=(20,10))
     for metric_name in ["all_reward_sums"]:
