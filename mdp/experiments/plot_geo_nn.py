@@ -68,7 +68,7 @@ def plot_param_search():
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
                 ax = fig.add_subplot(4, 2, i+1)
-                agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
+                agent_names = filter(lambda x: x.startswith(agent_type+"_step_size"),  list(metrics[metric_name][env].keys()))
                 metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
                 sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
                 for j, (_, algorithm) in enumerate(sorted_agent_name_pairs[:5]):
@@ -99,7 +99,7 @@ def plot_best_learning_curves():
         fig, ax = plt.subplots(figsize=(20,10))
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
-                agent_names = filter(lambda x: x.startswith(agent_name),  list(metrics[metric_name][env].keys()))
+                agent_names = filter(lambda x: x.startswith(agent_type+"_step_size"),  list(metrics[metric_name][env].keys()))
                 for algorithm in agent_names:
                     plot_metric(ax, env, algorithm, metric_name)
 
@@ -156,7 +156,7 @@ def plot_parameter_sensitivity(metrics):
                 error_bars = []
                 for j, val in enumerate(params_to_search[agent_type][param]):
                     print(agent_type, param, val)
-                    agent_names = list(filter(lambda x: x.startswith(agent_type) and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
+                    agent_names = list(filter(lambda x: x.startswith(agent_type+"_step_size") and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
                     print(agent_names)
                     metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
                     if metric_stats:
@@ -194,7 +194,7 @@ def plot_step_size_sensitivity(metrics):
             error_bars = []
             for j, val in enumerate(params_to_search[agent_type][param]):
                 print(agent_type, param, val)
-                agent_names = list(filter(lambda x: x.startswith(agent_type) and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
+                agent_names = list(filter(lambda x: x.startswith(agent_type+"_step_size") and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
                 print(agent_names)
                 metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
                 if metric_stats:
