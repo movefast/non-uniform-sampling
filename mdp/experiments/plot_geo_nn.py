@@ -1,6 +1,7 @@
 import collections
 import glob
 from collections import Counter
+from datetime import date
 
 import fire
 import numpy as np
@@ -128,8 +129,7 @@ def get_metric_stats(env, metric_name, algorithm):
 import math
 
 
-def plot_parameter_sensitivity(file_name):
-    metrics = torch.load(ROOT_DIR/f'metrics_{today}_{file_name}.torch')
+def plot_parameter_sensitivity(metrics):
     env = 'MDP'
     fig = plt.figure(figsize=(20,10))
     for metric_name in ["all_reward_sums"]:
@@ -180,7 +180,7 @@ def plot_parameter_sensitivity(file_name):
     plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}_param_study.png')
 
 
-def plot_step_size_sensitivity():
+def plot_step_size_sensitivity(metrics):
     env = 'MDP'
     fig, ax = plt.subplots(figsize=(20,10))
     for metric_name in ["all_reward_sums"]:
@@ -218,14 +218,16 @@ def plot_step_size_sensitivity():
     plt.savefig(ROOT_DIR/f'mdp/plots/param_study_{metric_name}_step_size.png')
             
 
-def plot(plot_type):
+def plot(plot_type, file_name):
+    today = date.today().strftime("%m_%d")
+    metrics = torch.load(ROOT_DIR/f'metrics_{today}_{file_name}.torch')
     if plot_type == "params":
         plot_param_search()
     elif plot_type == "lc":
         plot_best_learning_curves()
     elif plot_type == "sensitivity":
-        plot_step_size_sensitivity()
-        plot_parameter_sensitivity()
+        plot_step_size_sensitivity(metrics)
+        plot_parameter_sensitivity(metrics)
 
 
 if __name__ == '__main__':
