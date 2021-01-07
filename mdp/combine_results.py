@@ -7,6 +7,8 @@ import numpy as np
 import torch
 from configs import ROOT_DIR
 
+SKIP_METRICS = ["states", "msbpe", "ve"]
+
 
 def dict_merge(dct, merge_dct):
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
@@ -20,7 +22,7 @@ def dict_merge(dct, merge_dct):
     for k, v in merge_dct.items():
         if (k in dct and isinstance(dct[k], dict)
                 and isinstance(merge_dct[k], collections.Mapping)):
-            if k == "states":
+            if k in SKIP_METRICS:
                 continue
             dict_merge(dct[k], merge_dct[k])
         elif k in dct and isinstance(dct[k], list) and isinstance(v, list):
@@ -33,7 +35,11 @@ def combine_results(file_name):
     metrics = {"msbpe":{},"ve":{}, "all_reward_sums": {}, "hyper_params": {}}
     for file in glob.glob(str(ROOT_DIR/'mdp/metrics/*')):
         dict_merge(metrics, torch.load(file))
-    torch.save(metrics, ROOT_DIR/f'metrics_{today}_{file_name}.torch')
+    # 1) torch.save
+    # torch.save(metrics, ROOT_DIR/f'metrics_{today}_{file_name}.torch')
+    # 2) joblib.dump for large files
+    from sklearn import joblib
+    joblib.dump(metrics, ROOT_DIR/f'metrics_{today}_{file_name}.torch')
 
 if __name__ == '__main__':
     fire.Fire(combine_results)
