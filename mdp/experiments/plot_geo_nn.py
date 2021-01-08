@@ -117,7 +117,7 @@ def plot_best_learning_curves():
             # plt.legend()
             plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}.png')
 
-def get_metric_stats(env, metric_name, algorithm):
+def get_metric_stats(env, metric_name, algorithm, metrics):
     if metric_name == "all_reward_sums":
         algorithm_stats = -np.around(np.mean(metrics[metric_name][env][algorithm]),decimals=4)
         ste = np.around(np.std(np.mean(np.array(metrics[metric_name][env][algorithm]), axis=1))/np.sqrt(num_runs),decimals=4)
@@ -158,7 +158,7 @@ def plot_parameter_sensitivity(metrics):
                     print(agent_type, param, val)
                     agent_names = list(filter(lambda x: x.startswith(agent_type+"_step_size") and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
                     print(agent_names)
-                    metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
+                    metric_stats = [get_metric_stats(env, metric_name, agent_name, metrics) for agent_name in agent_names]
                     if metric_stats:
                         lst_of_stats, lst_of_stes = list(zip(*metric_stats))
                         if param == "step_size":
@@ -177,7 +177,7 @@ def plot_parameter_sensitivity(metrics):
             # if param == "step_size":
             #     ax.set_xscale("log")
     plt.suptitle(f"Sensitivity Analysis in 100-state RandomWalk ({metric_name})")
-    plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}_param_study.png')
+    plt.savefig(ROOT_DIR/f'mdp/plots/param_study_{metric_name}.png')
 
 
 def plot_step_size_sensitivity(metrics):
@@ -196,7 +196,7 @@ def plot_step_size_sensitivity(metrics):
                 print(agent_type, param, val)
                 agent_names = list(filter(lambda x: x.startswith(agent_type+"_step_size") and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
                 print(agent_names)
-                metric_stats = [get_metric_stats(env, metric_name, agent_name) for agent_name in agent_names]
+                metric_stats = [get_metric_stats(env, metric_name, agent_name, metrics) for agent_name in agent_names]
                 if metric_stats:
                     lst_of_stats, lst_of_stes = list(zip(*metric_stats))
                     if param == "step_size":
@@ -220,7 +220,11 @@ def plot_step_size_sensitivity(metrics):
 
 def plot(plot_type, file_name):
     today = date.today().strftime("%m_%d")
-    metrics = torch.load(ROOT_DIR/f'metrics_{today}_{file_name}.torch')
+    # 1) torch
+    # metrics = torch.load(ROOT_DIR/f'metrics_{today}_{file_name}.torch')
+    # 2)
+    import joblib
+    metrics = joblib.load(ROOT_DIR/f'metrics_{today}_{file_name}.torch')
     if plot_type == "params":
         plot_param_search()
     elif plot_type == "lc":
