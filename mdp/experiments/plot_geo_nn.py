@@ -19,6 +19,8 @@ titles = {"msbpe":'MSPBE',"ve":'Value Error (VE)', "all_reward_sums":'Sum of Rew
 # new geo experiment
 filtered_agent_list = ["Uniform", "PER", "GNorm", "GEO", "GEO_V2", "GEO_V2_2", "GEO_V2_3", "GEO_V2_4", "CER", "Sarsa_NN"]
 
+default_color_map = {k:v for k,v in zip(filtered_agent_list, plt.rcParams['axes.prop_cycle'].by_key()['color'])}
+
 y_lims = {"msbpe","ve", "all_reward_sums"}
 y_labels = {"msbpe":"MSPBE","ve":"Value Error (VE)", "all_reward_sums":"Sum of Rewards"}
 stats_metric = {"msbpe":"AUC","ve":"AUC", "all_reward_sums":"Average Rewards"}
@@ -169,7 +171,7 @@ def plot_parameter_sensitivity(metrics):
                         y_values.append(max(lst_of_stats))
                         error_bars.append(max(list(zip(lst_of_stats, lst_of_stes)))[1])
                 print(x_values, y_values)
-                ax.errorbar(x_values, y_values, label=agent_type, yerr=error_bars, capsize=5, elinewidth=1)#, markeredgewidth=10)
+                ax.errorbar(x_values, y_values, label=agent_type, yerr=error_bars, capsize=5, elinewidth=1, color=default_color_map[agent_type])#, markeredgewidth=10)
 
 
             ax.legend()
@@ -207,7 +209,7 @@ def plot_step_size_sensitivity(metrics):
                     y_values.append(max(lst_of_stats))
                     error_bars.append(max(list(zip(lst_of_stats, lst_of_stes)))[1])
             print(x_values, y_values)
-            ax.errorbar(x_values, y_values, label=agent_type, yerr=error_bars, capsize=5, elinewidth=1)#, markeredgewidth=10)
+            ax.errorbar(x_values, y_values, label=agent_type, yerr=error_bars, capsize=5, elinewidth=1, color=default_color_map[agent_type])#, markeredgewidth=10)
 
 
             ax.legend()
