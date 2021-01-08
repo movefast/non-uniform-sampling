@@ -158,7 +158,7 @@ agents = {
     "PER_wo_Recency_Bias": PERAgent,
     "GNorm": PERAgent,
     "GEO": GEOAgent,
-    "GEO_V2": GEOAgent,
+    "GEO_V2": GEOAgentV2,
     "GEO_V2_2": GEOAgentV2,
     "GEO_V2_3": GEOAgentV2,
     "GEO_V2_4": GEOAgentV2,
