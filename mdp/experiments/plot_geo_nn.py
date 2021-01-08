@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from configs import ROOT_DIR
 from matplotlib import pyplot as plt
+from mdp.utils import MinorSymLogLocator
 
 # results = pd.DataFrame(columns = ['agent', 'score', 'params'],
 #                                   index = list(range(MAX_EVALS)))
@@ -212,6 +213,9 @@ def plot_step_size_sensitivity(metrics):
             ax.legend()
             ax.set_title(f'{param}')
             ax.set_yscale("symlog")
+            y_axis = ax.yaxis
+            # import pdb; pdb.set_trace()
+            y_axis.set_minor_locator(MinorSymLogLocator(1e-1))
             # if param == "step_size":
             #     ax.set_xscale("log")
     plt.suptitle(f"Sensitivity Analysis in 100-state RandomWalk ({metric_name})")
@@ -232,6 +236,9 @@ def plot(plot_type, file_name):
     elif plot_type == "sensitivity":
         plot_step_size_sensitivity(metrics)
         plot_parameter_sensitivity(metrics)
+
+
+
 
 
 if __name__ == '__main__':
