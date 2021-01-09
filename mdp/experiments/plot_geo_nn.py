@@ -40,7 +40,7 @@ from mdp.experiments.write_jobs_geo_nn import params_to_search
 from mdp.run_single_job import num_runs
 
 
-def plot_metric(ax, env, algorithm, metric_name):
+def plot_metric(metrics, ax, env, algorithm, metric_name):
     if metric_name == "all_reward_sums":
         algorithm_means = -np.mean(metrics[metric_name][env][algorithm], axis=0)
     else:
@@ -63,19 +63,19 @@ def plot_metric(ax, env, algorithm, metric_name):
 def plot_param_search(metrics):
     best_agent_names = []
     for metric_name in ["all_reward_sums"]:
-        fig = plt.figure(figsize=(20,20))
+        fig = plt.figure(figsize=(20,40))
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
         print(metric_name)
         print("agent", stats_metric[metric_name], "SEM", sep='\t')
 
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
-                ax = fig.add_subplot(4, 2, i+1)
+                ax = fig.add_subplot(5, 2, i+1)
                 agent_names = filter(lambda x: x.startswith(agent_name+"_step_size"),  list(metrics[metric_name][env].keys()))
                 metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
                 sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
                 for j, (_, algorithm) in enumerate(sorted_agent_name_pairs[:5]):
-                    plot_metric(ax, env, algorithm, metric_name)
+                    plot_metric(metrics, ax, env, algorithm, metric_name)
                     if metric_name == "all_reward_sums" and j == 0:
                         best_agent_names.append(algorithm)
         fig.text(0.5, 0.04, 'Episodes', ha='center')
@@ -88,7 +88,7 @@ def plot_param_search(metrics):
         # plot best learning curves
         fig, ax = plt.subplots(figsize=(20,10))
         for algorithm in best_agent_names:
-            plot_metric(ax, env, algorithm, metric_name)
+            plot_metric(metrics, ax, env, algorithm, metric_name)
         
         plt.ylabel(y_labels[metric_name],rotation=0, labelpad=20)
         plt.xlabel("Episodes")
@@ -233,9 +233,9 @@ def plot(plot_type, file_name):
     import joblib
     metrics = joblib.load(ROOT_DIR/f'metrics_{today}_{file_name}.torch')
     if plot_type == "params":
-        plot_param_search()
+        plot_param_search(metrics)
     elif plot_type == "lc":
-        plot_best_learning_curves()
+        plot_best_learning_curves(metrics)
     elif plot_type == "sensitivity":
         plot_step_size_sensitivity(metrics)
         plot_parameter_sensitivity(metrics)
