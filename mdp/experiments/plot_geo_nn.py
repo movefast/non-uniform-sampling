@@ -60,9 +60,9 @@ def plot_metric(ax, env, algorithm, metric_name):
     ax.fill_between(range(num_episodes), algorithm_means + algorithm_stds/np.sqrt(num_runs), algorithm_means - algorithm_stds/np.sqrt(num_runs), alpha=0.2)
     ax.legend()
 
-def plot_param_search():
+def plot_param_search(metrics):
     best_agent_names = []
-    for metric_name in ["all_reward_sums", "msbpe","ve"]:
+    for metric_name in ["all_reward_sums"]:
         fig = plt.figure(figsize=(20,20))
         fig.subplots_adjust(hspace=0.4, wspace=0.4)
         print(metric_name)
@@ -71,7 +71,7 @@ def plot_param_search():
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
                 ax = fig.add_subplot(4, 2, i+1)
-                agent_names = filter(lambda x: x.startswith(agent_type+"_step_size"),  list(metrics[metric_name][env].keys()))
+                agent_names = filter(lambda x: x.startswith(agent_name+"_step_size"),  list(metrics[metric_name][env].keys()))
                 metrics_slice = {agent_name: metrics[metric_name][env][agent_name] for agent_name in agent_names}
                 sorted_agent_name_pairs = sorted([(np.mean(vals), algo) for algo, vals in metrics_slice.items()])
                 for j, (_, algorithm) in enumerate(sorted_agent_name_pairs[:5]):
@@ -81,9 +81,9 @@ def plot_param_search():
         fig.text(0.5, 0.04, 'Episodes', ha='center')
         fig.text(0.04, 0.5, titles[metric_name], va='center', rotation='vertical')
 
-        fig.suptitle("Learning Rate Sweep")
+        fig.suptitle("Top 5 performing model variants per algorithm")
 
-        plt.savefig(ROOT_DIR/f'mdp/plots/params_{metric_name}.png')
+        plt.savefig(ROOT_DIR/f'mdp/plots/top_5_{metric_name}.png')
 
         # plot best learning curves
         fig, ax = plt.subplots(figsize=(20,10))
@@ -95,14 +95,14 @@ def plot_param_search():
         plt.title("Nonstationary Policy in 100-state RandomWalk (buffer_size=1000)")
         plt.savefig(ROOT_DIR/f'mdp/plots/{metric_name}.png')
 
-def plot_best_learning_curves():
-    for metric_name in ["msbpe","ve", "all_reward_sums"]:
+def plot_best_learning_curves(metrics):
+    for metric_name in ["all_reward_sums"]:
         print(metric_name)
         print("agent", stats_metric[metric_name], "SEM", sep='\t')
         fig, ax = plt.subplots(figsize=(20,10))
         for env in env_infos:
             for i, agent_name in enumerate(filtered_agent_list):
-                agent_names = filter(lambda x: x.startswith(agent_type+"_step_size"),  list(metrics[metric_name][env].keys()))
+                agent_names = filter(lambda x: x.startswith(agent_name+"_step_size"),  list(metrics[metric_name][env].keys()))
                 for algorithm in agent_names:
                     plot_metric(ax, env, algorithm, metric_name)
 
@@ -158,9 +158,9 @@ def plot_parameter_sensitivity(metrics):
                 y_values = []
                 error_bars = []
                 for j, val in enumerate(params_to_search[agent_type][param]):
-                    print(agent_type, param, val)
+                    # print(agent_type, param, val)
                     agent_names = list(filter(lambda x: x.startswith(agent_type+"_step_size") and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
-                    print(agent_names)
+                    # print(agent_names)
                     metric_stats = [get_metric_stats(env, metric_name, agent_name, metrics) for agent_name in agent_names]
                     if metric_stats:
                         lst_of_stats, lst_of_stes = list(zip(*metric_stats))
@@ -170,7 +170,7 @@ def plot_parameter_sensitivity(metrics):
                             x_values.append(val)
                         y_values.append(max(lst_of_stats))
                         error_bars.append(max(list(zip(lst_of_stats, lst_of_stes)))[1])
-                print(x_values, y_values)
+                # print(x_values, y_values)
                 ax.errorbar(x_values, y_values, label=agent_type, yerr=error_bars, capsize=5, elinewidth=1, color=default_color_map[agent_type])#, markeredgewidth=10)
 
 
@@ -192,13 +192,14 @@ def plot_step_size_sensitivity(metrics):
         agent_list_for_param =  [agent_type for agent_type in filtered_agent_list if param in params_to_search[agent_type]]
 
         for agent_type in agent_list_for_param:
+            print(agent_type)
             x_values = []
             y_values = []
             error_bars = []
             for j, val in enumerate(params_to_search[agent_type][param]):
-                print(agent_type, param, val)
+                # print(agent_type, param, val)
                 agent_names = list(filter(lambda x: x.startswith(agent_type+"_step_size") and (f'{param}_{val}_' in x or x.endswith(f'{param}_{val}')),  list(metrics[metric_name][env].keys())))
-                print(agent_names)
+                # print(agent_names)
                 metric_stats = [get_metric_stats(env, metric_name, agent_name, metrics) for agent_name in agent_names]
                 if metric_stats:
                     lst_of_stats, lst_of_stes = list(zip(*metric_stats))
