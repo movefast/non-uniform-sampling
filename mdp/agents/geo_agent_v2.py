@@ -221,7 +221,7 @@ class LinearAgent(agent.BaseAgent):
                 # 1) un-normalized
                 # self.buffer.geo_weights += errors.mean().item()
                 # 2) normalized tanh
-                self.buffer.geo_weights += torch.tanh(errors.mean().item())
+                self.buffer.geo_weights += torch.tanh(errors.mean()).item()
                 # 3) unlikely choice
                 # self.buffer.geo_weights += torch.sigmoid(errors.mean().item()) * 2 - 1
             # if self.updates % 10 == 0:
