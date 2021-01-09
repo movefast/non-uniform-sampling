@@ -49,22 +49,22 @@ def grid_search(agent_type, param_grid):#, num_runs=10):
         create_job(agent_type, hyper_params)
 
 agents = {
-    "Uniform": None,
-    "PER": None,
-    # "PER_wo_Recency_Bias": None,
-    "GNorm": None,
-    "GEO": None,
-    "GEO_V2": None,
-    "GEO_V2_2": None,
+    # "Uniform": None,
+    # "PER": None,
+    # # "PER_wo_Recency_Bias": None,
+    # "GNorm": None,
+    # "GEO": None,
+    # "GEO_V2": None,
+    # "GEO_V2_2": None,
     "GEO_V2_3": None,
     "GEO_V2_4": None,
-    "CER": None,
-#     "Diverse": DivAgent,
-    # "Sarsa": None,
-    "Sarsa_NN": None
-    # "Sarsa_lambda": None,
-    # "Meta_PER": None,
-    # "Meta_CER": None,
+#     "CER": None,
+# #     "Diverse": DivAgent,
+#     # "Sarsa": None,
+#     "Sarsa_NN": None
+#     # "Sarsa_lambda": None,
+#     # "Meta_PER": None,
+#     # "Meta_CER": None,
 }
 agent_infos = {
     "Uniform": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10},
@@ -90,31 +90,23 @@ def get_lr(b=1e-2, a=2, n=5):
 
 
 params_to_search = {
-    "Uniform": {
-        "step_size": get_lr(n=8),
-        # "num_meta_update": [1, 2, 5, 10],
-    },
-    # "Sarsa_lambda": {
-    #     "step_size": get_lr(1,n=8),
-    #     "lambda":[0.99,0.98,0.96,0.9,0.84,0.68,0],
-    # },
-    "Sarsa_NN": {
-        "step_size": get_lr(n=8),
-        # "num_meta_update": [1, 2, 5, 10],
-    },
-    "CER": {
-        "step_size": get_lr(n=8),
-        # "num_meta_update": [1, 2, 5, 10],
-    },
-    "PER": {
-        "step_size": get_lr(n=8),
-        "buffer_alpha": get_lr(b=1.5,n=5), 
-        "buffer_beta":get_lr(b=1,n=5),
-#         "buffer_alpha": [0.6, 0.7], 
-#         "buffer_beta":[0.4, 0.5, 0.6], 
-        # "num_meta_update": [1, 2, 5, 10],
-    },
-#     "PER_wo_Recency_Bias": {
+#     "Uniform": {
+#         "step_size": get_lr(n=8),
+#         # "num_meta_update": [1, 2, 5, 10],
+#     },
+#     # "Sarsa_lambda": {
+#     #     "step_size": get_lr(1,n=8),
+#     #     "lambda":[0.99,0.98,0.96,0.9,0.84,0.68,0],
+#     # },
+#     "Sarsa_NN": {
+#         "step_size": get_lr(n=8),
+#         # "num_meta_update": [1, 2, 5, 10],
+#     },
+#     "CER": {
+#         "step_size": get_lr(n=8),
+#         # "num_meta_update": [1, 2, 5, 10],
+#     },
+#     "PER": {
 #         "step_size": get_lr(n=8),
 #         "buffer_alpha": get_lr(b=1.5,n=5), 
 #         "buffer_beta":get_lr(b=1,n=5),
@@ -122,65 +114,59 @@ params_to_search = {
 # #         "buffer_beta":[0.4, 0.5, 0.6], 
 #         # "num_meta_update": [1, 2, 5, 10],
 #     },
-    "GNorm": {
-        "step_size": get_lr(n=8),
-        "buffer_alpha": get_lr(b=1.5,n=5), 
-        "buffer_beta":get_lr(b=1,n=5),
-#         "buffer_alpha": [0.6, 0.7], 
-#         "buffer_beta":[0.4, 0.5, 0.6], 
-        # "num_meta_update": [1, 2, 5, 10],
-    },
-    "GEO": {
-        "step_size": get_lr(n=8),
-        "buffer_beta":get_lr(b=1,n=5), 
-        "p": get_lr(.1,n=5),
-        # "num_meta_update": [1, 2, 5, 10],
-    },
-    "GEO_V2": {
-        "step_size": get_lr(n=8),
-        "buffer_beta": get_lr(b=1,n=5), 
-        "lam": get_lr(b=5,n=5), 
-        "tau_1": get_lr(b=5,n=5),
-        "tau_2": get_lr(b=5,n=5), 
-        "min_weight": get_lr(b=.5,n=5),
-        # "num_meta_update": [1, 2, 5, 10],
-    },
-    "GEO_V2_2": {
-        "step_size": get_lr(n=8),
-        "buffer_beta": get_lr(b=1,n=5), 
-        "lam": get_lr(b=5,n=5), 
-        "tau_1": get_lr(b=5,n=5),
-        "min_weight": get_lr(b=.5,n=5),
-        # "num_meta_update": [1, 2, 5, 10],
-    },
+# #     "PER_wo_Recency_Bias": {
+# #         "step_size": get_lr(n=8),
+# #         "buffer_alpha": get_lr(b=1.5,n=5), 
+# #         "buffer_beta":get_lr(b=1,n=5),
+# # #         "buffer_alpha": [0.6, 0.7], 
+# # #         "buffer_beta":[0.4, 0.5, 0.6], 
+# #         # "num_meta_update": [1, 2, 5, 10],
+# #     },
+#     "GNorm": {
+#         "step_size": get_lr(n=8),
+#         "buffer_alpha": get_lr(b=1.5,n=5), 
+#         "buffer_beta":get_lr(b=1,n=5),
+# #         "buffer_alpha": [0.6, 0.7], 
+# #         "buffer_beta":[0.4, 0.5, 0.6], 
+#         # "num_meta_update": [1, 2, 5, 10],
+#     },
+#     "GEO": {
+#         "step_size": get_lr(n=8),
+#         "buffer_beta":get_lr(b=1,n=5), 
+#         "p": get_lr(.1,n=5),
+#         # "num_meta_update": [1, 2, 5, 10],
+#     },
+    # "GEO_V2": {
+    #     "step_size": get_lr(n=8),
+    #     "buffer_beta": get_lr(b=1,n=5), 
+    #     "lam": get_lr(b=5,n=5), 
+    #     "tau_1": get_lr(b=5,n=5),
+    #     "tau_2": get_lr(b=2,n=6), 
+    #     "min_weight": get_lr(b=.5,n=5),
+    #     # "num_meta_update": [1, 2, 5, 10],
+    # },
+    # "GEO_V2_2": {
+    #     "step_size": get_lr(n=8),
+    #     "buffer_beta": get_lr(b=1,n=5), 
+    #     "tau_1": get_lr(b=5,n=5),
+    #     "tau_2": get_lr(b=2,n=6),
+    #     "min_weight": get_lr(b=.5,n=5),
+    #     # "num_meta_update": [1, 2, 5, 10],
+    # },
     "GEO_V2_3": {
         "step_size": get_lr(n=8),
         "buffer_beta": get_lr(b=1,n=5), 
-        "tau_1": get_lr(b=5,n=5),
+        "tau_2": get_lr(b=2,n=11),
         "min_weight": get_lr(b=.5,n=5),
         # "num_meta_update": [1, 2, 5, 10],
     },
     "GEO_V2_4": {
         "step_size": get_lr(n=8),
         "buffer_beta": get_lr(b=1,n=5), 
-        "tau_1": get_lr(b=5,n=5),
+        "tau_1": get_lr(b=1,n=10),
         "min_weight": get_lr(b=.5,n=5),
         # "num_meta_update": [1, 2, 5, 10],
     },
-    # "Meta_CER": {
-    #     "meta_step_size": get_lr(b=1,a=10, n=5),
-    #     "step_size": get_lr(n=8),
-    #     "online_opt": ["sgd", "adam"],
-    #     "num_meta_update": [1, 2, 5, 10],
-    # },
-    # "Meta_PER": {
-    #     "meta_step_size": get_lr(b=1,a=10, n=5),
-    #     "step_size": get_lr(n=8),
-    #     "buffer_alpha": get_lr(b=1.5,n=5), 
-    #     "buffer_beta":get_lr(b=1,n=5), 
-    #     "online_opt": ["sgd", "adam"],
-    #     "num_meta_update": [1, 2, 5, 10],
-    # },
 }
 
 

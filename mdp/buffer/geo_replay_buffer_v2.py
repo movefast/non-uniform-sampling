@@ -117,13 +117,13 @@ class ReplayMemory(object):
         # weights_sum = self.geo_weights[-self.num_ele:].sum()
 
         if self.weighting_strat == Strat.TWO_EXP:
-            weights = (np.exp(-self.geo_weights/self.tau_1)+ self.lam * np.exp(-self.loss_weights/self.tau_2))/ (1 + self.lam)
+            weights = (np.exp(-self.geo_weights*self.tau_1)+ self.lam * np.exp(-self.loss_weights*self.tau_2))/ (1 + self.lam)
         elif self.weighting_strat == Strat.ONE_EXP:
-            weights = np.exp(-(self.geo_weights + self.lam * self.loss_weights)/self.tau_1)
+            weights = np.exp(-(self.tau_1 * self.geo_weights + self.tau_2 * self.loss_weights))
         elif self.weighting_strat == Strat.DISCOR:
-            weights = np.exp(-self.loss_weights/self.tau_1)
+            weights = np.exp(-self.loss_weights*self.tau_2)
         elif self.weighting_strat == Strat.GEO:
-            weights = np.exp(-self.geo_weights/self.tau_1) 
+            weights = np.exp(-self.geo_weights*self.tau_1) 
         else:
             raise NotImplementedError
         
