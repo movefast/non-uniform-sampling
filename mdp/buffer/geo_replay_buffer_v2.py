@@ -137,9 +137,9 @@ class ReplayMemory(object):
         # default uniform
         # weights = np.ones(self.num_ele)
         if self.num_ele < self.capacity:
-            weights = weights[-self.num_ele:]
+            weights = weights[:self.num_ele]
         # TODO if add cer we need to think about how to adjust this
-        weights_sum = weights[-self.num_ele:].sum()
+        weights_sum = weights[:self.num_ele].sum()
         idxes = torch.multinomial(torch.from_numpy(weights).float(), n, replacement=False)
         # idxes = torch.multinomial(torch.from_numpy(weights).float(), n, replacement=True)
         batch = [self.memory[idx] for idx in idxes]
