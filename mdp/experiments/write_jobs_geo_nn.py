@@ -153,19 +153,18 @@ params_to_search = {
     #     "min_weight": get_lr(b=.5,n=5),
     #     # "num_meta_update": [1, 2, 5, 10],
     # },
-    # "GEO_V2_3": {
-    #     "step_size": get_lr(n=8),
-    #     "buffer_beta": get_lr(b=1,n=5), 
-    #     "tau_2": get_lr(b=2,n=11),
-    #     "min_weight": get_lr(b=.5,n=5),
-    #     # "num_meta_update": [1, 2, 5, 10],
-    # },
-    "GEO_V2_4": {
-        "step_size": [0.0003125],
+    "GEO_V2_3": {
+        "step_size": get_lr(n=8),
         "buffer_beta": get_lr(b=1,n=5), 
-        "tau_1": get_lr(b=.1,n=5),
+        "tau_2": get_lr(b=2,n=11),
+        "min_weight": get_lr(b=.5,n=5),
+    },
+    "GEO_V2_4": {
+        "step_size": get_lr(n=8),
+        "buffer_alpha": [0, 0.2, 0.5, 0.8, 1, 1.5],
+        "buffer_beta": get_lr(b=1,n=5), 
+        "tau_1": get_lr(b=1,n=10),
         "min_weight": get_lr(b=.1,n=5)+[0],
-        # "num_meta_update": [1, 2, 5, 10],
     },
 }
 

@@ -64,12 +64,13 @@ class LinearAgent(agent.BaseAgent):
         self.beta_increment = agent_init_info.get("beta_increment", 0.001)
 
         self.correction = agent_init_info["correction"]
-        self.tau_1 = agent_init_info["tau_1"]
+        self.tau_1 = agent_init_info.get("tau_1", None)
         self.tau_2 = agent_init_info.get("tau_2", None)
         self.lam = agent_init_info.get("lam", None)
         self.min_weight = agent_init_info["min_weight"]
 
         self.weighting_strat = agent_init_info["weighting_strat"] 
+        # self.use_discor_loss = agent_init_info["use_discor_loss"]
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
@@ -199,16 +200,13 @@ class LinearAgent(agent.BaseAgent):
             # 2) no is correction
             else:
                 loss = criterion(q_learning_action_values, target)
+            # discor_weights = np.exp(-self.buffer.loss_weights[idxs] * self.discount / self.tau_2) 
             errors = torch.abs((q_learning_action_values - target).squeeze_(dim=-1))
-            # for i in range(self.batch_size):
-            #     self.buffer.update(idxs[i], np.power(errors[i].item(), self.per_power))
 
             # update loss weights for Discor correction
             nonzero_idxes = idxs != 0
             t_1_idxs = idxs-1
             self.buffer.loss_weights[idxs[nonzero_idxes]] = errors[nonzero_idxes].detach().cpu().numpy() + discount_batch.numpy()[nonzero_idxes] * self.buffer.loss_weights[t_1_idxs[nonzero_idxes]]
-            # self.buffer.loss_weights[idxs] *= self.discount
-            # self.buffer.loss_weights[idxs] += errors.detach().cpu().numpy() 
 
             self.optimizer.zero_grad()
             loss.backward()
@@ -216,14 +214,7 @@ class LinearAgent(agent.BaseAgent):
                 param.grad.data.clamp_(-1, 1)
             self.optimizer.step()
             with torch.no_grad():
-                # self.buffer.geo_weights *= 2 * F.sigmoid(-errors.mean()).item()
-                # self.buffer.geo_weights *= torch.exp(-errors.mean()).item()
-                # 1) un-normalized
-                # self.buffer.geo_weights += errors.mean().item()
-                # 2) normalized tanh
-                self.buffer.geo_weights += torch.tanh(errors.mean()).item()
-                # 3) unlikely choice
-                # self.buffer.geo_weights += torch.sigmoid(errors.mean().item()) * 2 - 1
+                self.buffer.geo_weights += errors.mean().item() ** self.buffer_alpha
             # if self.updates % 10 == 0:
             #     self.update()
 

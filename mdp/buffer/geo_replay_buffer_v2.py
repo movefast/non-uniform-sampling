@@ -106,46 +106,29 @@ class ReplayMemory(object):
         # \beta^(t-s) / (\sum_{k=1}^t \beta^{t-k}) 
     def sample_geo(self, n):
         self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
-        # old geo strat
-        # if self.num_ele < self.capacity:
-        #     weights = self.geo_weights[-self.num_ele:]
-        # else:
-        #     weights = self.geo_weights
-        # # added min value for weights
-        # weights = np.clip(weights, 1e-3,None) 
-        # # TODO if add cer we need to think about how to adjust this
-        # weights_sum = self.geo_weights[-self.num_ele:].sum()
 
         if self.weighting_strat == Strat.TWO_EXP:
-            weights = (np.exp(-self.geo_weights*self.tau_1)+ self.lam * np.exp(-self.loss_weights*self.tau_2))/ (1 + self.lam)
+            raise NotImplementedError 
         elif self.weighting_strat == Strat.ONE_EXP:
-            weights = np.exp(-(self.tau_1 * self.geo_weights + self.tau_2 * self.loss_weights))
+            raise NotImplementedError
         elif self.weighting_strat == Strat.DISCOR:
-            weights = np.exp(-self.loss_weights*self.tau_2)
+            weights = -self.loss_weights*self.tau_2
+            weights = np.exp(weights)
         elif self.weighting_strat == Strat.GEO:
-            weights = np.exp(-self.geo_weights*self.tau_1) 
+            weights = -self.geo_weights*((self.num_ele-1) / (self.geo_weights[0]+1e-5))*self.tau_1
+            weights = np.clip(np.exp(weights), self.min_weight, None)
         else:
             raise NotImplementedError
         
-        # other weighting strats I've tried
-        # weights = np.exp(-(self.geo_weights + 5 * self.loss_weights)/5)
-        # weights = np.exp(-(self.geo_weights/np.max(self.geo_weights)))
-        # weights = (np.exp(-self.geo_weights/5)+ .2 * np.exp(-self.loss_weights))/1.2
-        # weights = np.exp(-(self.geo_weights/(np.max(self.geo_weights) + 1e-3) + 1 * self.loss_weights/(np.max(self.loss_weights) + 1e-3)))
-
-        weights = np.clip(weights, self.min_weight, None) 
-        # default uniform
-        # weights = np.ones(self.num_ele)
         if self.num_ele < self.capacity:
             weights = weights[:self.num_ele]
-        # TODO if add cer we need to think about how to adjust this
-        weights_sum = weights[:self.num_ele].sum()
-        idxes = torch.multinomial(torch.from_numpy(weights).float(), n, replacement=False)
-        # idxes = torch.multinomial(torch.from_numpy(weights).float(), n, replacement=True)
+        weights /= weights.sum()
+
+        idxes = np.random.choice(self.num_ele, n, p=weights, replace=False)
         batch = [self.memory[idx] for idx in idxes]
         
-        sampling_probabilities = weights[idxes.numpy()] / weights_sum
-        is_weight = np.power(len(self.memory) * sampling_probabilities, -self.beta)
+        sampling_probabilities = weights[idxes]
+        is_weight = np.power(len(self.memory) * (sampling_probabilities+ 1e-5), -self.beta)
         is_weight /= is_weight.max()
 
         return batch, idxes, is_weight
