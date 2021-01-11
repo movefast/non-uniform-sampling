@@ -213,8 +213,9 @@ class LinearAgent(agent.BaseAgent):
             for param in self.nn.parameters():
                 param.grad.data.clamp_(-1, 1)
             self.optimizer.step()
-            with torch.no_grad():
-                self.buffer.geo_weights += errors.mean().item() ** self.buffer_alpha
+            if self.weighting_strat != 3: 
+                with torch.no_grad():
+                    self.buffer.geo_weights += errors.mean().item() ** self.buffer_alpha
             # if self.updates % 10 == 0:
             #     self.update()
 
