@@ -22,6 +22,7 @@ from mdp.agents.geo_agent import LinearAgent as GEOAgent
 from mdp.agents.geo_agent_v2 import LinearAgent as GEOAgentV2
 from mdp.agents.nn_agent import LinearAgent as NNAgent
 from mdp.agents.per_agent import LinearAgent as PERAgent
+from mdp.agents.per_agent_v2 import LinearAgent as PERAgentV2
 from mdp.agents.sarsa_agent import LinearAgent as SarsaNNAgent
 from mdp.archive.sarsa_agent import QLearningAgent as SarsaAgent
 # from mdp.diversity_agent import LinearAgent as DivAgent
@@ -156,6 +157,11 @@ agents = {
     "Uniform": NNAgent,
     "PER": PERAgent,
     "PER_wo_Recency_Bias": PERAgent,
+    "PER_V2": PERAgentV2,
+    "GEO_min_weight": PERAgentV2,
+    "GEO_min_weight_adaptive_decay": PERAgentV2,
+    "PER_GEO": PERAgentV2,
+    "PER_WO_Recency_Bias_GEO": PERAgentV2,
     "GNorm": PERAgent,
     "GEO": GEOAgent,
     "GEO_V2": GEOAgentV2,
@@ -176,6 +182,11 @@ agent_infos = {
     "Uniform": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "num_meta_update":1},
     "CER": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "k":1, "num_meta_update":1},
     "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1},
+    "PER_V2": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":1},
+    "GEO_min_weight": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "geo_alpha": 0, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False,"tau": 0.01, "min_weight":.01, "num_meta_update":1, "weighting_strat":2},
+    "GEO_min_weight_adaptive_decay": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "geo_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False,"tau": 0.01, "min_weight":.01, "num_meta_update":1, "weighting_strat":2},
+    "PER_GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "geo_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False,"tau": 0.01, "lam": 2, "min_weight":.01, "num_meta_update":1, "weighting_strat":3},
+    "PER_WO_Recency_Bias_GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "geo_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": False, "grad_norm": False,"tau": 0.01, "lam": 2, "min_weight":.01, "num_meta_update":1, "weighting_strat":3},
     "GNorm": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": True, "num_meta_update":1},
     "PER_wo_Recency_Bias": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": False, "grad_norm": False, "num_meta_update":1},
     "GEO": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "p":.1, "num_meta_update":1},
