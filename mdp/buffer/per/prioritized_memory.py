@@ -1,4 +1,5 @@
 import random
+import sys
 from enum import IntEnum
 
 import numpy as np
@@ -13,7 +14,7 @@ class Strat(IntEnum):
 
 
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
-    e = 0.01
+    e = sys.float_info.epsilon
 
     def __init__(self, capacity, alpha=None, beta=None, beta_increment=None, weighting_strat=None, lam=None, tau=None, min_weight=1e-1, geo_alpha=None):
         self.tree = SumTree(capacity)
@@ -33,7 +34,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         self.data = np.zeros(capacity, dtype=object)
         self.ptr = 0
         # 1)
-        self.max_priority = self._get_priority(0) 
+        self.max_priority = self._get_priority(0)
         # 2)
         # self.max_priority = 1
 
@@ -67,13 +68,13 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             geo_last_idx = 0
         else:
             geo_last_idx = self.ptr + 1
-        geo_weights = -self.geo_weights*((self.num_ele-1) / (self.geo_weights[geo_last_idx]+1e-5))*self.tau
+        geo_weights = -self.geo_weights/(self.geo_weights[geo_last_idx]+ self.e)* (self.num_ele-1) *self.tau
         geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
         if self.num_ele < self.capacity:
             geo_weights = geo_weights[:self.num_ele]
-        geo_weights /= geo_weights.sum()
+        # geo_weights /= geo_weights.sum()
         per_weights = self.tree.nodes[-1][:self.num_ele]
-        per_weights_1 = per_weights / self.tree.nodes[0][0]
+        per_weights_1 = per_weights / self.max_priority.item()
         if not weighting_strat:
             weighting_strat = self.weighting_strat
         if weighting_strat == Strat.PER:
@@ -81,7 +82,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         elif weighting_strat == Strat.GEO:
             final_weights = geo_weights
         elif weighting_strat == Strat.PER_GEO:
-            final_weights = (geo_weights + self.lam * per_weights_1) / (1 + self.lam)
+            final_weights = (geo_weights + self.lam * per_weights_1)
         return final_weights
     
     def sample_from_tree(self, batch_size):
@@ -89,30 +90,30 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             geo_last_idx = 0
         else:
             geo_last_idx = self.ptr + 1 
-        geo_weights = -self.geo_weights*((self.num_ele-1) / (self.geo_weights[geo_last_idx]+1e-5))*self.tau
+        geo_weights = -self.geo_weights/(self.geo_weights[geo_last_idx]+self.e)*(self.num_ele-1)*self.tau
         geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
         if self.num_ele < self.capacity:
             geo_weights = geo_weights[:self.num_ele]
-        geo_weights /= geo_weights.sum()
         per_weights = self.tree.nodes[-1][:self.num_ele]
-        per_weights_1 = per_weights / self.tree.nodes[0][0]
+        per_weights_1 = per_weights / self.max_priority.item()
         if self.weighting_strat == Strat.PER:
             final_weights = per_weights_1
         elif self.weighting_strat == Strat.GEO:
             final_weights = geo_weights
         elif self.weighting_strat == Strat.PER_GEO:
-            final_weights = (geo_weights + self.lam * per_weights_1) / (1 + self.lam)
+            final_weights = (geo_weights + self.lam * per_weights_1)
+        final_weights /= final_weights.sum()
         ind = np.random.choice(self.num_ele, batch_size, p=final_weights, replace=False)
         weights = np.array(final_weights[ind] ** -self.beta)
         weights /= weights.max()
         return ind, weights
 
     def batch_update(self, ind, priority):
+        priority = self._get_priority(priority)
         if self.num_ele == self.capacity:
             self.geo_weights += priority.mean().item() ** self.geo_alpha
         else:
             self.geo_weights[:self.num_ele] += priority.mean().item() ** self.geo_alpha
-        priority = self._get_priority(priority)
         self.max_priority = max(priority.max(), self.max_priority)
         self.tree.batch_set(ind, priority)
 
