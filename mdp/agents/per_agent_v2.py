@@ -60,8 +60,8 @@ class LinearAgent(agent.BaseAgent):
         self.batch_size      = agent_init_info.get("batch_size", 10)
         self.buffer_size     = agent_init_info.get("buffer_size", 1000)
 
-        self.per_alpha = agent_init_info["per_alpha"]
-        self.geo_alpha = agent_init_info["geo_alpha"] 
+        self.per_alpha = agent_init_info.get("per_alpha", None)
+        self.geo_alpha = agent_init_info.get("geo_alpha", None) 
         self.buffer_beta = agent_init_info["buffer_beta"]
         self.beta_increment = agent_init_info.get("beta_increment", 0.001)
 
@@ -70,7 +70,7 @@ class LinearAgent(agent.BaseAgent):
         self.use_grad_norm = agent_init_info.get("grad_norm", False)
         self.tau = agent_init_info.get("tau", None)
         self.lam = agent_init_info.get("lam", None)
-        self.min_weight = agent_init_info["min_weight"]
+        self.min_weight = agent_init_info.get("min_weight", None)
         self.weighting_strat = agent_init_info["weighting_strat"]  
 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)

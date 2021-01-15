@@ -86,16 +86,18 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         return final_weights
     
     def sample_from_tree(self, batch_size):
-        if self.num_ele < self.capacity or self.ptr == self.num_ele -1:
-            geo_last_idx = 0
-        else:
-            geo_last_idx = self.ptr + 1 
-        geo_weights = -self.geo_weights/(self.geo_weights[geo_last_idx]+self.e)*(self.num_ele-1)*self.tau
-        geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
-        if self.num_ele < self.capacity:
-            geo_weights = geo_weights[:self.num_ele]
-        per_weights = self.tree.nodes[-1][:self.num_ele]
-        per_weights_1 = per_weights / self.max_priority.item()
+        if self.weighting_strat != Strat.PER:
+            if self.num_ele < self.capacity or self.ptr == self.num_ele -1:
+                geo_last_idx = 0
+            else:
+                geo_last_idx = self.ptr + 1 
+            geo_weights = -self.geo_weights/(self.geo_weights[geo_last_idx]+self.e)*(self.num_ele-1)*self.tau
+            geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
+            if self.num_ele < self.capacity:
+                geo_weights = geo_weights[:self.num_ele]
+        if self.weighting_strat != Strat.GEO:
+            per_weights = self.tree.nodes[-1][:self.num_ele]
+            per_weights_1 = per_weights / self.max_priority.item()
         if self.weighting_strat == Strat.PER:
             final_weights = per_weights_1
         elif self.weighting_strat == Strat.GEO:
@@ -109,13 +111,16 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         return ind, weights
 
     def batch_update(self, ind, priority):
-        priority = self._get_priority(priority)
-        if self.num_ele == self.capacity:
-            self.geo_weights += priority.mean().item() ** self.geo_alpha
-        else:
-            self.geo_weights[:self.num_ele] += priority.mean().item() ** self.geo_alpha
-        self.max_priority = max(priority.max(), self.max_priority)
-        self.tree.batch_set(ind, priority)
+        if self.weighting_strat != Strat.PER:
+            geo_priority = self._get_geo_priority(priority.mean().item())
+            if self.num_ele == self.capacity:
+                self.geo_weights += geo_priority
+            else:
+                self.geo_weights[:self.num_ele] += geo_priority
+        if self.weighting_strat != Strat.GEO:
+            priority = self._get_priority(priority)
+            self.max_priority = max(priority.max(), self.max_priority)
+            self.tree.batch_set(ind, priority)
 
     def update(self, ind, priority):
         priority = self._get_priority(priority)
@@ -124,6 +129,9 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
     def _get_priority(self, error):
         return (np.abs(error) + self.e) ** self.a
+
+    def _get_geo_priority(self, error):
+        return (np.abs(error) + self.e) ** self.geo_alpha
 
     def __len__(self):
         return self.num_ele
