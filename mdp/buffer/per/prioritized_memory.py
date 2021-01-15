@@ -100,6 +100,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             per_weights_1 = per_weights / self.max_priority.item()
         if self.weighting_strat == Strat.PER:
             final_weights = per_weights_1
+            batch_size = min(batch_size, np.count_nonzero(final_weights))
         elif self.weighting_strat == Strat.GEO:
             final_weights = geo_weights
         elif self.weighting_strat == Strat.PER_GEO:
