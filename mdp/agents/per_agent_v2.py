@@ -74,7 +74,7 @@ class LinearAgent(agent.BaseAgent):
         self.lam = agent_init_info.get("lam", None)
         self.min_weight = agent_init_info.get("min_weight", None)
         self.weighting_strat = agent_init_info["weighting_strat"]  
-        self.sim_mode = agent_init_info.get("sim_mode", None)
+        self.sim_mode = agent_init_info.get("sim_mode", 0)
 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)

@@ -16,7 +16,7 @@ class Strat(IntEnum):
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
     e = sys.float_info.epsilon
 
-    def __init__(self, capacity, alpha=None, beta=None, beta_increment=None, weighting_strat=None, lam=None, tau=None, min_weight=1e-1, geo_alpha=None, sim_mode=0):
+    def __init__(self, capacity, alpha=None, beta=None, beta_increment=None, weighting_strat=None, lam=None, tau=None, min_weight=1e-1, geo_alpha=None, sim_mode=None):
         self.tree = SumTree(capacity)
         self.capacity = capacity
         self.num_ele = 0
