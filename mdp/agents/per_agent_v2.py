@@ -4,7 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from mdp import autograd_hacks
-from mdp.buffer.per.prioritized_memory import Memory
+# TODO change back
+# from mdp.buffer.per.prioritized_memory import Memory
+from mdp.buffer.per.prioritized_memory_v2 import Memory
 from mdp.replay_buffer import Transition
 
 criterion = torch.nn.MSELoss()
@@ -72,6 +74,7 @@ class LinearAgent(agent.BaseAgent):
         self.lam = agent_init_info.get("lam", None)
         self.min_weight = agent_init_info.get("min_weight", None)
         self.weighting_strat = agent_init_info["weighting_strat"]  
+        self.sim_mode = agent_init_info.get("sim_mode", None)
 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)
@@ -79,12 +82,12 @@ class LinearAgent(agent.BaseAgent):
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.update_target()
         self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
-        self.buffer = Memory(self.buffer_size, self.per_alpha, self.buffer_beta, self.beta_increment, self.weighting_strat, self.lam, self.tau, self.min_weight, self.geo_alpha)
+        self.buffer = Memory(self.buffer_size, self.per_alpha, self.buffer_beta, self.beta_increment, self.weighting_strat, self.lam, self.tau, self.min_weight, self.geo_alpha, self.sim_mode)
         self.tau = 0.5
         self.updates = 0
 
         self.sampled_state = np.zeros(self.num_states)
-
+    
     def weights_init(self, m):
         classname = m.__class__.__name__
         if classname.find('Linear') != -1:
@@ -93,7 +96,7 @@ class LinearAgent(agent.BaseAgent):
     def get_state_feature(self, state):
         state, is_door = state
         state = np.eye(self.num_states)[state]
-        state = torch.Tensor(state).to(device)[None, ...]
+        state = torch.FloatTensor(state).to(device)[None, ...]
         return state
 
     def agent_start(self, state):
@@ -189,7 +192,23 @@ class LinearAgent(agent.BaseAgent):
             new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
             reward_batch = torch.FloatTensor(batch.reward).to(device)
             discount_batch = torch.FloatTensor(batch.discount).to(device)
-
+            similarities = state_batch @ state_batch.T
+            
+            # need to assert idx unique
+            # temp_sims = self.buffer.sims
+            scatter_idxs = torch.tensor(idxs).repeat(len(idxs), 1)
+            self.buffer.sims[idxs] = self.buffer.sims[idxs].scatter(1, scatter_idxs, similarities.to(dtype=torch.float64))
+            # self.buffer.sims = self.buffer.sims.T @ self.buffer.sims  / self.buffer.sims.norm(dim=0, keepdim=True).pow(2)
+            # self.buffer.sims = torch.matrix_power(self.buffer.sims, 2)
+            # temp_sims[idxs].scatter_(1, scatter_idxs, similarities.to(dtype=torch.float64))
+            # for i in range(0, state_batch.shape[0] - 1):
+            #     j = i + 1
+            #     while j < state_batch.shape[0]:
+            #         self.buffer.set_sim(idxs[i], idxs[j], similarities[i,j].item())
+            #         self.buffer.set_sim(idxs[j], idxs[i], similarities[i,j].item())
+            #         j += 1
+            # assert(temp_sims.allclose(self.buffer.sims))
+            
             self.sampled_state += state_batch.sum(0).detach().cpu().numpy()
 
             current_q = self.nn(state_batch)
