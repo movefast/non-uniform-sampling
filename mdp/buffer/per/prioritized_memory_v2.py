@@ -40,9 +40,8 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
         ## TODO: change this
         self.device = torch.device("cpu")
-
-        self.sims = torch.ones((self.capacity, self.capacity), dtype=float)
         self.sim_mode = sim_mode
+        self.sims = torch.zeros((self.capacity, self.capacity), dtype=float)
 
     def add(self, error, *args):
         self.data[self.ptr] = Transition(*args) 
@@ -51,9 +50,12 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         # 2)
         self.tree.set(self.ptr, self._get_priority(error))
         self.geo_weights[self.ptr] = 0
-        self.sims[self.ptr] = 1
-        self.sims[:, self.ptr] = 1
-        
+        if self.sim_mode == 1: 
+            self.sims[self.ptr] = 1
+            self.sims[:, self.ptr] = 1
+        elif self.sim_mode == 2: 
+            self.sims[self.ptr] = 0
+            self.sims[:, self.ptr] = 0
         self.ptr = (self.ptr + 1) % self.capacity
         self.num_ele = min(self.num_ele + 1, self.capacity)
 
