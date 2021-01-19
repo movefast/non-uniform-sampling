@@ -41,7 +41,8 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         ## TODO: change this
         self.device = torch.device("cpu")
         self.sim_mode = sim_mode
-        self.sims = torch.zeros((self.capacity, self.capacity), dtype=float)
+        # self.sims = torch.zeros((self.capacity, self.capacity), dtype=float)
+        self.sims = torch.eye(self.capacity, self.capacity, dtype=float)
 
     def add(self, error, *args):
         self.data[self.ptr] = Transition(*args) 
@@ -97,10 +98,6 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
     
     def sample_from_tree(self, batch_size):
         if self.weighting_strat != Strat.PER:
-            if self.num_ele < self.capacity or self.ptr == self.num_ele -1:
-                geo_last_idx = 0
-            else:
-                geo_last_idx = self.ptr + 1 
             geo_weights = -self.geo_weights/(self.geo_weights.max()+self.e)*(self.num_ele-1)*self.tau
             geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
             if self.num_ele < self.capacity:
@@ -129,7 +126,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             # temp = self.sims 
             # temp = torch.div(temp, temp.sum(dim=0,keepdim=True))
             # temp = torch.matrix_power(temp, 10)
-            # temp = torch.div(temp, temp.diagonal()[None,])
+            # temp = torch.clamp(torch.div(temp, temp.diagonal()[None,]), min=0, max=1)
             # geo_sims = (1 - torch.clamp(temp[ind], min=0, max=1).mean(axis=0)).numpy()
             # 2)
             # geo_sims = self.sims[ind].max(axis=0)
