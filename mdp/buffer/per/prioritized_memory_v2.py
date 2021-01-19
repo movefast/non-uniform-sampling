@@ -122,11 +122,13 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
     def batch_update(self, ind, priority):
         if self.weighting_strat != Strat.PER:
-            geo_priority = self._get_geo_priority(1 - torch.clamp(priority, min=0, max=1)).numpy()
+            geo_priority = self._get_geo_priority(priority).numpy()
+            geo_priority /= geo_priority.max()
+            geo_priority = 1 - geo_priority
             # 1)
             # temp = self.sims 
             # temp = torch.div(temp, temp.sum(dim=0,keepdim=True))
-            # temp = torch.matrix_power(temp, 2)
+            # temp = torch.matrix_power(temp, 5)
             # temp = torch.clamp(torch.div(temp, temp.diagonal()[None,]), min=0, max=1)
             # geo_sims = (1 - torch.clamp(temp[ind], min=0, max=1).mean(axis=0)).numpy()
             # 2)
@@ -150,10 +152,10 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             else:
                 self.geo_weights[:self.num_ele] += (geo_priority @ geo_sims)[:self.num_ele]
         # comment out to view per weights when testing
-        if self.weighting_strat != Strat.GEO:
-            priority = self._get_priority(priority)
-            self.max_priority = max(priority.max(), self.max_priority)
-            self.tree.batch_set(ind, priority)
+        # if self.weighting_strat != Strat.GEO:
+        priority = self._get_priority(priority)
+        self.max_priority = max(priority.max(), self.max_priority)
+        self.tree.batch_set(ind, priority)
 
     def update(self, ind, priority):
         priority = self._get_priority(priority)
