@@ -192,7 +192,8 @@ class LinearAgent(agent.BaseAgent):
             new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
             reward_batch = torch.FloatTensor(batch.reward).to(device)
             discount_batch = torch.FloatTensor(batch.discount).to(device)
-            similarities = state_batch @ state_batch.T
+            state_action_batch = torch.cat([action_batch, state_batch], dim=1)
+            similarities = state_action_batch @ state_action_batch.T
             
             # need to assert idx unique
             # temp_sims = self.buffer.sims

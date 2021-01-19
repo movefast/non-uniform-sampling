@@ -57,6 +57,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         elif self.sim_mode == 2: 
             self.sims[self.ptr] = 0
             self.sims[:, self.ptr] = 0
+            self.sims[self.ptr, self.ptr] = 1
         self.ptr = (self.ptr + 1) % self.capacity
         self.num_ele = min(self.num_ele + 1, self.capacity)
 
@@ -125,7 +126,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             # 1)
             # temp = self.sims 
             # temp = torch.div(temp, temp.sum(dim=0,keepdim=True))
-            # temp = torch.matrix_power(temp, 10)
+            # temp = torch.matrix_power(temp, 2)
             # temp = torch.clamp(torch.div(temp, temp.diagonal()[None,]), min=0, max=1)
             # geo_sims = (1 - torch.clamp(temp[ind], min=0, max=1).mean(axis=0)).numpy()
             # 2)
@@ -139,6 +140,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             # 5)
             elif self.sim_mode == 2:
                 geo_sims = self.sims[ind].numpy()
+                # geo_sims = temp[ind].numpy()
             elif self.sim_mode == 0:
                 geo_sims = np.ones(self.capacity)
             else:
@@ -147,6 +149,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
                 self.geo_weights += geo_priority @ geo_sims
             else:
                 self.geo_weights[:self.num_ele] += (geo_priority @ geo_sims)[:self.num_ele]
+        # comment out to view per weights when testing
         if self.weighting_strat != Strat.GEO:
             priority = self._get_priority(priority)
             self.max_priority = max(priority.max(), self.max_priority)
