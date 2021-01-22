@@ -28,9 +28,9 @@ from mdp.archive.sarsa_agent import QLearningAgent as SarsaAgent
 # from mdp.diversity_agent import LinearAgent as DivAgent
 from mdp.env import policies
 from mdp.env.errors import *
+from mdp.env.mdp_env import MazeEnvironment
 from mdp.env.policies import Policy
 from mdp.env.random_walk import RandomWalk
-from mdp.mdp_env import MazeEnvironment
 from mdp.meta_cer_agent import LinearAgent as MCERAgent
 from mdp.meta_per_agent import LinearAgent as MPERAgent
 from mdp.sarsa_lambda import QLearningAgent as SarsaLAgent
