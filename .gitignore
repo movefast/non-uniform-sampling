@@ -7,6 +7,9 @@ results.tar
 mdp/jobs/
 mdp/metrics/
 mdp/plots/
+maze/jobs/
+maze/metrics/
+maze/plots/
 __pycache__
 *.pyc
 
