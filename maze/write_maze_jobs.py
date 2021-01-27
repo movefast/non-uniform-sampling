@@ -98,5 +98,5 @@ if __name__ == "__main__":
         else:
             grid_search(agent_type, params_to_search[agent_type])
 
-        print('Jobs: sbatch --array={}-{} ./mdp/jobs/run_cpu.sh'.format(0, count-1))
+        print('Jobs: sbatch --array={}-{} ./maze/jobs/run_cpu.sh'.format(0, count-1))
 
