@@ -1,4 +1,5 @@
 import random
+import sys
 
 import numpy as np
 import torch
@@ -8,7 +9,7 @@ from mdp.sum_tree import SumTree
 
 
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
-    e = 0.01
+    e = sys.float_info.epsilon
 
     def __init__(self, capacity, alpha=None, beta=None, beta_increment=None, p=None):
         self.tree = SumTree(capacity)
@@ -55,7 +56,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         sampling_probabilities = priorities / self.tree.total()
 
         # recency biased correction
-        # data_idx = [idx - self.capacity + 1 for idx in idxs] 
+        # data_idx = [idx - self.capacity + 1 for idx in idxs]
         # if self.num_ele < self.capacity:
         #     weights = self.geo_weights[-self.num_ele:]
         #     weights_sum = self.geo_weights[-self.num_ele:].sum()
@@ -77,7 +78,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
     def last_n(self, seq_len):
         return self.tree.last_n(seq_len)
 
-    # \beta^(t-s) / (\sum_{k=1}^t \beta^{t-k}) 
+    # \beta^(t-s) / (\sum_{k=1}^t \beta^{t-k})
     def sample_geo(self, n):
         self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
         if self.num_ele < self.capacity:
