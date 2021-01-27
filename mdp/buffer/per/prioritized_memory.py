@@ -10,7 +10,7 @@ from mdp.replay_buffer import Transition
 class Strat(IntEnum):
     PER = 1
     GEO = 2
-    PER_GEO = 3 
+    PER_GEO = 3
 
 
 class Memory:  # stored as ( s, a, r, s_ ) in SumTree
@@ -42,9 +42,9 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         self.device = torch.device("cpu")
 
     def add(self, error, *args):
-        self.data[self.ptr] = Transition(*args) 
+        self.data[self.ptr] = Transition(*args)
         # 1)
-        # self.tree.set(self.ptr, self.max_priority) 
+        # self.tree.set(self.ptr, self.max_priority)
         # 2)
         self.tree.set(self.ptr, self._get_priority(error))
         self.geo_weights[self.ptr] = 0
@@ -59,7 +59,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
         self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
         ind, weights = self.sample_from_tree(n)
-        batch = self.data[ind] 
+        batch = self.data[ind]
         self.beta = min(self.beta + self.beta_increment_per_sampling, 1)
         return batch, ind, torch.FloatTensor(weights).to(self.device).reshape(-1)
 
@@ -84,13 +84,13 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         elif weighting_strat == Strat.PER_GEO:
             final_weights = (geo_weights + self.lam * per_weights_1)
         return final_weights
-    
+
     def sample_from_tree(self, batch_size):
         if self.weighting_strat != Strat.PER:
             if self.num_ele < self.capacity or self.ptr == self.num_ele -1:
                 geo_last_idx = 0
             else:
-                geo_last_idx = self.ptr + 1 
+                geo_last_idx = self.ptr + 1
             geo_weights = -self.geo_weights/(self.geo_weights[geo_last_idx]+self.e)*(self.num_ele-1)*self.tau
             geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
             if self.num_ele < self.capacity:
@@ -160,7 +160,7 @@ class SumTree(object):
         # Confirm we don't increment a node twice
         node_index, unique_index = np.unique(node_index, return_index=True)
         priority_diff = new_priority[unique_index] - self.nodes[-1][node_index]
-        
+
         for nodes in self.nodes[::-1]:
             np.add.at(nodes, node_index, priority_diff)
             node_index //= 2

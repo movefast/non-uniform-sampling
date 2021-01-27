@@ -123,12 +123,12 @@ class LinearAgent(agent.BaseAgent):
             action = self.argmax(current_q)
 
         self.batch_train(self.prev_state, self.prev_action, state, action, reward, self.discount)
-        
+
         self.prev_action_value = current_q[action]
         self.prev_state = state
         self.prev_action = action
         self.steps += 1
-        
+
         return action
 
     def agent_end(self, reward, state, append_buffer=True):
