@@ -78,8 +78,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
     def test_sample(self, weighting_strat=None):
         geo_weights = -self.geo_weights/(self.geo_weights.max()+self.e)*(self.num_ele-1)*self.tau
-        geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
-
+        geo_weights = np.exp(geo_weights)
         if self.num_ele < self.capacity:
             geo_weights = geo_weights[:self.num_ele]
         per_weights = self.tree.nodes[-1][:self.num_ele] #/ self.max_priority
@@ -98,9 +97,9 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             final_weights = per_weights
         elif self.weighting_strat == Strat.GEO:
             geo_weights = -self.geo_weights/(self.geo_weights.max()+self.e)*(self.num_ele-1)*self.tau
-            geo_weights = np.clip(np.exp(geo_weights), self.min_weight, None)
-            geo_weights = geo_weights[:self.num_ele] * per_weights
-            final_weights = geo_weights
+            geo_weights = np.exp(geo_weights)
+            final_weights = geo_weights[:self.num_ele] * per_weights
+        final_weights = np.clip(final_weights, self.min_weight, None)
         final_weights /= final_weights.sum()
         batch_size = min(batch_size, np.count_nonzero(final_weights))
         ind = np.random.choice(self.num_ele, batch_size, p=final_weights, replace=False)

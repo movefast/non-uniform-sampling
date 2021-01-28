@@ -39,7 +39,7 @@ nb_dir = os.path.split(os.getcwd())[0]
 if nb_dir not in sys.path:
     sys.path.append(nb_dir)
 
-cur_dir = ROOT_DIR/"mdp"
+cur_dir = ROOT_DIR/"maze"
 
 # random policy
 def get_pred_error(agent, epsilon_greedy=False):

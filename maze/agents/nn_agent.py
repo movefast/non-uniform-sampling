@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mdp.replay_buffer import ReplayMemory, Transition
+from maze.replay_buffer import ReplayMemory, Transition
 
 criterion = torch.nn.MSELoss()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -129,7 +129,7 @@ class LinearAgent(agent.BaseAgent):
             action = self.argmax(current_q)
 
         self.buffer.push(self.prev_state, self.prev_action, state, action, reward, self.discount)
-        
+
         self.prev_action_value = current_q[action]
         self.prev_state = state
         self.prev_action = action

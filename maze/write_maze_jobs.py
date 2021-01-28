@@ -75,6 +75,7 @@ params_to_search = {
         "step_size": get_lr(n=8),
         "per_alpha": get_lr(b=1,n=4),
         "buffer_beta":get_lr(b=1,n=4),
+        "min_weight": get_lr(b=.1,n=5)+[0],
     },
     "PER_V2": {
         "step_size": get_lr(n=8),
@@ -90,8 +91,8 @@ params_to_search = {
 if __name__ == "__main__":
     for agent_type in master_bar(list(agents.keys())):
         print(agent_type)
-        if agent_type == 'Meta_PER':
-            random_search(agent_type, params_to_search[agent_type], max_evals=400)
+        if agent_type == 'PER':
+            random_search(agent_type, params_to_search[agent_type], max_evals=100)
         # elif agent_type in ('PER', 'GEO', "Meta_CER"):
         elif agent_type in ("PER_V2"):
             random_search(agent_type, params_to_search[agent_type])
