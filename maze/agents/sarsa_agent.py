@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from mdp.replay_buffer import ReplayMemory, Transition
+from maze.replay_buffer import ReplayMemory, Transition
 
 criterion = torch.nn.MSELoss()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
