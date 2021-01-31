@@ -182,8 +182,11 @@ agent_infos = {
     "Sarsa_lambda": {"step_size": .1, "buffer_size": 100, "batch_size": 1, "lambda":.9},
     "Uniform": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "num_meta_update":1},
     "CER": {"step_size": 1e-2, "buffer_size": 1000, "batch_size": 10, "k":1, "num_meta_update":1},
-    "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "decay_by_uncertainty": False},
-    "PER_V2": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":1, "decay_by_uncertainty": False},
+    # 1) old PER setting
+    # "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "buffer_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1},
+    # 2) new per setting
+    "PER": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":1, "decay_by_uncertainty": False},
+    "PER_V2": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":2, "decay_by_uncertainty": False},
     "GEO_min_weight": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "geo_alpha": 0, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False,"tau": 0.01, "min_weight":.01, "num_meta_update":1, "weighting_strat":2, "decay_by_uncertainty": False},
     "GEO_min_weight_adaptive_decay": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "geo_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False,"tau": 0.01, "min_weight":.01, "num_meta_update":1, "weighting_strat":2, "decay_by_uncertainty": False},
     "GEO_sim": {"step_size": 3e-3, "buffer_size": 1000, "batch_size": 10, "correction":True, "geo_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False,"tau": 0.01, "min_weight":.01, "num_meta_update":1, "weighting_strat":2, "decay_by_uncertainty": False},
