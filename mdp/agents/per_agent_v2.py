@@ -6,7 +6,9 @@ import torch.nn.functional as F
 from mdp import autograd_hacks
 # TODO change back
 # from mdp.buffer.per.prioritized_memory import Memory
-from mdp.buffer.per.prioritized_memory_v2 import Memory
+# from mdp.buffer.per.prioritized_memory_v2 import Memory
+from mdp.buffer.per.prioritized_memory_v3 import Memory
+# from mdp.buffer.per.prioritized_memory_v4 import Memory
 from mdp.replay_buffer import Transition
 
 criterion = torch.nn.MSELoss()
@@ -63,7 +65,7 @@ class LinearAgent(agent.BaseAgent):
         self.buffer_size     = agent_init_info.get("buffer_size", 1000)
 
         self.per_alpha = agent_init_info.get("per_alpha", None)
-        self.geo_alpha = agent_init_info.get("geo_alpha", None) 
+        self.geo_alpha = agent_init_info.get("geo_alpha", None)
         self.buffer_beta = agent_init_info["buffer_beta"]
         self.beta_increment = agent_init_info.get("beta_increment", 0.001)
 
@@ -73,8 +75,9 @@ class LinearAgent(agent.BaseAgent):
         self.tau = agent_init_info.get("tau", None)
         self.lam = agent_init_info.get("lam", None)
         self.min_weight = agent_init_info.get("min_weight", None)
-        self.weighting_strat = agent_init_info["weighting_strat"]  
+        self.weighting_strat = agent_init_info["weighting_strat"]
         self.sim_mode = agent_init_info.get("sim_mode", 0)
+        self.decay_by_uncertainty = agent_init_info["decay_by_uncertainty"]
 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)
@@ -82,12 +85,12 @@ class LinearAgent(agent.BaseAgent):
         self.target_nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.update_target()
         self.optimizer = torch.optim.Adam(self.nn.parameters(), lr=self.step_size)
-        self.buffer = Memory(self.buffer_size, self.per_alpha, self.buffer_beta, self.beta_increment, self.weighting_strat, self.lam, self.tau, self.min_weight, self.geo_alpha, self.sim_mode)
+        self.buffer = Memory(self.buffer_size, self.per_alpha, self.buffer_beta, self.beta_increment, self.weighting_strat, self.lam, self.tau, self.min_weight, self.geo_alpha, self.sim_mode, self.decay_by_uncertainty)
         self.tau = 0.5
         self.updates = 0
 
         self.sampled_state = np.zeros(self.num_states)
-    
+
     def weights_init(self, m):
         classname = m.__class__.__name__
         if classname.find('Linear') != -1:
@@ -192,9 +195,10 @@ class LinearAgent(agent.BaseAgent):
             new_action_batch = torch.LongTensor(batch.new_action).view(-1, 1).to(device)
             reward_batch = torch.FloatTensor(batch.reward).to(device)
             discount_batch = torch.FloatTensor(batch.discount).to(device)
-            state_action_batch = torch.cat([action_batch, state_batch], dim=1)
-            similarities = state_action_batch @ state_action_batch.T
-            
+            similarities = state_batch @ state_batch.T #/ state_action_batch.norm().pow(2)
+            # state_action_batch = torch.cat([action_batch, state_batch], dim=1)
+            # similarities = state_action_batch @ state_action_batch.T / state_action_batch.norm().pow(2)
+
             # need to assert idx unique
             # temp_sims = self.buffer.sims
             scatter_idxs = torch.tensor(idxs).repeat(len(idxs), 1)
@@ -209,7 +213,7 @@ class LinearAgent(agent.BaseAgent):
             #         self.buffer.set_sim(idxs[j], idxs[i], similarities[i,j].item())
             #         j += 1
             # assert(temp_sims.allclose(self.buffer.sims))
-            
+
             self.sampled_state += state_batch.sum(0).detach().cpu().numpy()
 
             current_q = self.nn(state_batch)
@@ -277,7 +281,7 @@ class LinearAgent(agent.BaseAgent):
                 for param in self.nn.parameters():
                     param.grad.data.clamp_(-1, 1)
                 self.optimizer.step()
-                
+
                 # if self.updates % 100 == 0:
                 #     self.update()
 
