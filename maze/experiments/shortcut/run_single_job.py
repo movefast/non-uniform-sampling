@@ -236,6 +236,7 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
                 if episode == 150:
                     env.obstacles_locs = to_list([*zip([2]*7, range(1,7))])
 
+                reward_sums.append(sum_of_rewards)
                 lst_of_msbpe.append(msbpe)
                 lst_of_ve.append(ve)
                 lst_of_sampled_states.append(agent.sampled_state.tolist())
