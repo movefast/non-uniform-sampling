@@ -100,7 +100,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             geo_weights = -self.geo_weights/(self.geo_weights.max()+self.e)*(self.num_ele-1)*self.tau
             geo_weights = np.exp(geo_weights)
             final_weights = geo_weights[:self.num_ele] * per_weights
-        final_weights = np.clip(final_weights, self.min_weight, None)
+        final_weights = np.clip(final_weights, max(self.min_weight, self.e), None)
         final_weights /= final_weights.sum()
         batch_size = min(batch_size, np.count_nonzero(final_weights))
         ind = np.random.choice(self.num_ele, batch_size, p=final_weights, replace=False)
