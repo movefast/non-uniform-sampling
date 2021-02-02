@@ -234,13 +234,17 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
                     all_history.setdefault(env_name, {}).setdefault(algorithm, []).append(history)
                 if exp_decay_explor:
                     epsilon *= 0.99
+                # 1)
+                # if episode % 100 == 0:
+                #     if flag:
+                #         env.obstacles_locs = to_list([*zip([2]*7, range(1,8))])
+                #     else:
+                #         env.obstacles_locs = to_list([*zip([2]*7, range(0,7))])
+                #     flag = bool(1-flag)
+                # 2)
+                if episode == 150:
+                    env.obstacles_locs = to_list([*zip([2]*7, range(1,8))])
 
-                if episode % 100 == 0:
-                    if flag:
-                        env.obstacles_locs = to_list([*zip([2]*7, range(1,8))])
-                    else:
-                        env.obstacles_locs = to_list([*zip([2]*7, range(0,7))])
-                    flag = bool(1-flag)
                 reward_sums.append(sum_of_rewards)
                 lst_of_msbpe.append(msbpe)
                 lst_of_ve.append(ve)
