@@ -79,7 +79,6 @@ params_to_search = {
     "PER_V2": {
         "step_size": get_lr(n=8),
         "per_alpha": get_lr(b=1,n=4),
-        "geo_alpha": get_lr(b=1,n=4),
         "buffer_beta":get_lr(b=1,n=4),
         "tau": get_lr(b=1,n=10)+[0],
         "min_weight": get_lr(b=.1,n=5)+[0],
