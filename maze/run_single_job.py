@@ -30,7 +30,7 @@ from maze.env.maze_env import MazeEnvironment
 
 gamma = .9
 num_states = 48
-num_runs = 25
+num_runs = 50
 num_episodes = 300
 exp_decay_explor = True
 
@@ -160,11 +160,11 @@ agents = {
 agent_infos = {
     # "Sarsa": {"step_size": .1, "buffer_size": 100, "batch_size": 1},
     "Sarsa_NN": {"step_size": 3e-3, "num_meta_update":1},
-    "Sarsa_lambda": {"step_size": 3e-3, "buffer_size": 50, "batch_size": 1, "lambda":.9},
-    "Uniform": {"step_size": 3e-3, "buffer_size": 50, "batch_size": 10, "num_meta_update":1},
-    "CER": {"step_size": 3e-3, "buffer_size": 50, "batch_size": 10, "k":1, "num_meta_update":1},
-    "PER": {"step_size": 3e-3, "buffer_size": 50, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":1},
-    "PER_V2": {"step_size": 3e-3, "buffer_size": 50, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":2, "sim_mode":2, "decay_by_uncertainty":False},
+    "Sarsa_lambda": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 1, "lambda":.9},
+    "Uniform": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "num_meta_update":1},
+    "CER": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "k":1, "num_meta_update":1},
+    "PER": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":1},
+    "PER_V2": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":2, "sim_mode":2, "decay_by_uncertainty":False},
 }
 
 
@@ -203,8 +203,8 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
             agent_info["seed"] = run
             agent_info.update(agent_infos[agent_type])
             agent_info.update(hyper_params)
-            if algorithm in ('PER', 'PER_V2'):
-                agent_info["beta_increment"] = (1 - agent_info['buffer_beta']) / (num_episodes - 50)
+            # if algorithm in ('PER', 'PER_V2'): # miss consideration of # sampling
+            #     agent_info["beta_increment"] = (1 - agent_info['buffer_beta']) / (num_episodes - 50)
             np.random.seed(run)
             agent.agent_init(agent_info)
 
