@@ -70,10 +70,9 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
     def sample(self, n):
         batch = []
-        self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
         ind, weights = self.sample_from_tree(n)
         batch = self.data[ind]
-        self.beta = min(self.beta + self.beta_increment_per_sampling, 1)
+        # self.beta = min(self.beta + self.beta_increment_per_sampling, 1)
         return batch, ind, torch.FloatTensor(weights).to(self.device).reshape(-1)
 
     def test_sample(self, weighting_strat=None):

@@ -203,8 +203,8 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
             agent_info["seed"] = run
             agent_info.update(agent_infos[agent_type])
             agent_info.update(hyper_params)
-            # if algorithm in ('PER', 'PER_V2'): # miss consideration of # sampling
-            #     agent_info["beta_increment"] = (1 - agent_info['buffer_beta']) / (num_episodes - 50)
+            if agent_type in ('PER', 'PER_V2'):
+                agent_info["beta_increment"] = (1 - agent_info['buffer_beta']) / 150
             np.random.seed(run)
             agent.agent_init(agent_info)
 
@@ -244,6 +244,8 @@ def objective(agent_type, hyper_params, num_runs=num_runs):
                 # 2)
                 if episode == 150:
                     env.obstacles_locs = to_list([*zip([2]*7, range(1,8))])
+                if agent_type in ('PER', 'PER_V2'):
+                    agent.buffer.beta = np.min([1., agent.buffer.beta + agent.buffer.beta_increment_per_sampling])
 
                 reward_sums.append(sum_of_rewards)
                 lst_of_msbpe.append(msbpe)
