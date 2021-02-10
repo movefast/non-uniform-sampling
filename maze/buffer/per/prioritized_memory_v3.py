@@ -108,7 +108,7 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
         batch_size = min(batch_size, np.count_nonzero(final_weights))
         ind = np.random.choice(self.num_ele, batch_size, p=final_weights, replace=False)
         weights = np.array(np.clip(final_weights[ind], self.e, None) ** -self.beta)
-        weights /= weights.max()
+        weights /= weights.max() + self.e
         return ind, weights
 
     def batch_update(self, ind, priority):
