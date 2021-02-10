@@ -104,9 +104,12 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
 
         final_weights = np.clip(final_weights, self.min_weight, None)
 
-        final_weights /= final_weights.sum()
-        batch_size = min(batch_size, np.count_nonzero(final_weights))
-        ind = np.random.choice(self.num_ele, batch_size, p=final_weights, replace=False)
+        if np.all(final_weights == 0):
+            ind = np.random.choice(self.num_ele, batch_size, replace=False)
+        else:
+            final_weights /= final_weights.sum()
+            batch_size = min(batch_size, np.count_nonzero(final_weights))
+            ind = np.random.choice(self.num_ele, batch_size, p=final_weights, replace=False)
         weights = np.array(np.clip(final_weights[ind], self.e, None) ** -self.beta)
         weights /= weights.max() + self.e
         return ind, weights
