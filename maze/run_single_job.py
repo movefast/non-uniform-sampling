@@ -25,6 +25,7 @@ from tqdm import tqdm
 from maze.agents.cer_agent import LinearAgent as CERAgent
 from maze.agents.nn_agent import LinearAgent as NNAgent
 from maze.agents.per_agent_v2 import LinearAgent as PERAgentV2
+from maze.agents.per_agent_v3 import LinearAgent as PERAgentV3
 from maze.agents.sarsa_agent import LinearAgent as SarsaNNAgent
 from maze.env.maze_env import MazeEnvironment
 
@@ -156,6 +157,7 @@ agents = {
     "CER": CERAgent,
     "PER": PERAgentV2,
     "PER_V2": PERAgentV2,
+    "PER_V3": PERAgentV3,
 }
 agent_infos = {
     # "Sarsa": {"step_size": .1, "buffer_size": 100, "batch_size": 1},
@@ -165,6 +167,7 @@ agent_infos = {
     "CER": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "k":1, "num_meta_update":1},
     "PER": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":1},
     "PER_V2": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":2, "sim_mode":2, "decay_by_uncertainty":False},
+    "PER_V3": {"step_size": 3e-3, "buffer_size": 100, "batch_size": 10, "correction":True, "per_alpha":0.6, "buffer_beta":0.4, "beta_increment":1e-4, "recency_bias": True, "grad_norm": False, "num_meta_update":1, "weighting_strat":2, "sim_mode":2, "decay_by_uncertainty":False},
 }
 
 
