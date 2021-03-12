@@ -243,6 +243,7 @@ class LinearAgent(agent.BaseAgent):
                     self.buffer.batch_update(idxs, errors)
                 self.optimizer.zero_grad()
                 loss.backward()
+                autograd_hacks.compute_grad1(self.nn.h2o)
                 for param in self.nn.parameters():
                     param.grad.data.clamp_(-1, 1)
                 # get grad similarities
@@ -251,6 +252,7 @@ class LinearAgent(agent.BaseAgent):
                     similarities = temp @ temp.T
                     scatter_idxs = torch.tensor(idxs).repeat(len(idxs), 1)
                     self.buffer.sims[idxs] = self.buffer.sims[idxs].scatter(1, scatter_idxs, similarities.to(dtype=torch.float64))
+                autograd_hacks.clear_backprops(self.nn.h2o)
 
                 self.optimizer.step()
 
