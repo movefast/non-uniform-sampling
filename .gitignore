@@ -22,3 +22,9 @@ test.json
 # ignore jupyter notebook cache
 *.ipynb_checkpoints
 mdp/*.ipynb
+
+# ignore metrics files
+metrics*
+
+# ignore nbs dir
+nbs/
