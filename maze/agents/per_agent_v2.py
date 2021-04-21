@@ -56,9 +56,10 @@ class LinearAgent(agent.BaseAgent):
 
         self.discount = agent_init_info["discount"]
         self.rand_generator = np.random.RandomState(agent_init_info["seed"])
+        torch.manual_seed(agent_init_info["seed"])
 
-        self.batch_size      = agent_init_info.get("batch_size", 10)
-        self.buffer_size     = agent_init_info.get("buffer_size", 1000)
+        self.batch_size = agent_init_info.get("batch_size", 10)
+        self.buffer_size = agent_init_info.get("buffer_size", 1000)
 
         self.per_alpha = agent_init_info.get("per_alpha", None)
         self.geo_alpha = agent_init_info.get("geo_alpha", None)
@@ -192,10 +193,11 @@ class LinearAgent(agent.BaseAgent):
             reward_batch = torch.FloatTensor(batch.reward).to(device)
             discount_batch = torch.FloatTensor(batch.discount).to(device)
             similarities = state_batch @ state_batch.T #/ state_action_batch.norm().pow(2)
+            # state_action_batch = torch.cat([action_batch, state_batch], dim=1)
+            # similarities = state_action_batch @ state_action_batch.T #/ state_action_batch.norm().pow(2)
 
             scatter_idxs = torch.tensor(idxs).repeat(len(idxs), 1)
             self.buffer.sims[idxs] = self.buffer.sims[idxs].scatter(1, scatter_idxs, similarities.to(dtype=torch.float64))
-
 
             self.sampled_state += state_batch.sum(0).detach().cpu().numpy()
 

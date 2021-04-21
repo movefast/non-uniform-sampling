@@ -52,6 +52,7 @@ class LinearAgent(agent.BaseAgent):
 
         self.discount = agent_init_info["discount"]
         self.rand_generator = np.random.RandomState(agent_init_info["seed"])
+        torch.manual_seed(agent_init_info["seed"])
 
         self.nn = SimpleNN(self.num_states, self.num_actions).to(device)
         self.weights_init(self.nn)
